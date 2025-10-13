@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+
+  --font-sans: "Inter", "Helvetica", "Arial", sans-serif;
+  --color-primary: #8b4513;   /* nâu gỗ */
+  --color-secondary: #d4a373; /* vàng ấm */
+}
+
+html, body { min-height: 100%; }
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+html { scroll-behavior: smooth; }
