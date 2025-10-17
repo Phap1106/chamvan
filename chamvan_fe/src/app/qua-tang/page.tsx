@@ -1,11 +1,23 @@
-import ProductGrid from '@/components/ProductGrid';
-import { byTag } from '@/lib/products';
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import ListingPage from "../tat-ca-san-pham/shared/ListingPage";
 
-export default function QuaTangPage() {
+export const metadata: Metadata = {
+  title: "Quà tặng | Chạm Vân",
+  description: "Gợi ý quà tặng tinh tế bằng gỗ giả cổ.",
+  alternates: { canonical: "/qua-tang" },
+  openGraph: {
+    title: "Quà tặng | Chạm Vân",
+    description: "Các mẫu quà tặng phù hợp biếu tặng, trang trí.",
+    url: "https://your-domain.com/qua-tang",
+    type: "website",
+  },
+};
+
+export default function Page() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">Gợi ý quà tặng</h1>
-      <ProductGrid products={byTag('qua-tang')} />
-    </div>
+    <Suspense>
+      <ListingPage initialCategory="qua-tang" />
+    </Suspense>
   );
 }

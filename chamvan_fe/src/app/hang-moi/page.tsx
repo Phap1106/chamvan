@@ -1,11 +1,23 @@
-import ProductGrid from '@/components/ProductGrid';
-import { byTag } from '@/lib/products';
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import ListingPage from "../tat-ca-san-pham/shared/ListingPage";
 
-export default function HangMoiPage() {
+export const metadata: Metadata = {
+  title: "Hàng mới | Chạm Vân",
+  description: "Sản phẩm mới cập nhật từ Chạm Vân.",
+  alternates: { canonical: "/hang-moi" },
+  openGraph: {
+    title: "Hàng mới | Chạm Vân",
+    description: "Khám phá các mẫu đồ gỗ mới nhất.",
+    url: "https://your-domain.com/hang-moi",
+    type: "website",
+  },
+};
+
+export default function Page() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">Sản phẩm mới</h1>
-      <ProductGrid products={byTag('hang-moi')} />
-    </div>
+    <Suspense>
+      <ListingPage initialCategory="hang-moi" />
+    </Suspense>
   );
 }

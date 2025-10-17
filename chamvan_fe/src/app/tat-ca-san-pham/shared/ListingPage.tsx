@@ -9,14 +9,14 @@ import ProductHover, { Product } from "@/components/ProductHover";
 /* ====== CẤU HÌNH DANH MỤC ====== */
 const CATEGORIES = [
   { slug: "", label: "Tất cả" },
-  { slug: "phong-tho", label: "Phòng thờ" },
-  { slug: "phong-khach", label: "Phòng khách" },
-  { slug: "phong-thuy", label: "Phong thủy" },
+  { slug: "hang-moi", label: "Hàng mới" },
+  { slug: "qua-tang", label: "Quà tặng" },
+  { slug: "trang-tri-nha", label: "Trang trí nhà" },
   { slug: "trung-bay", label: "Trưng bày" },
 ];
 
 /* ====== MOCK DATA — thay bằng API sau ====== */
-const MOCK_PRODUCTS: Product[] = [
+export const MOCK_PRODUCTS: Product[] = [
   {
     id: "p1",
     name: "Hộp bút Innate",
@@ -850,7 +850,7 @@ export default function ListingPage({
   const activeCategory = categoryFromURL;
 
   function pushParams(next: URLSearchParams, base?: string) {
-    const href = (base ?? (initialCategory ? `/trang-tri-nha/${initialCategory}` : "/trang-tri-nha")) +
+    const href = (base ?? (initialCategory ? `/tat-ca-san-pham/${initialCategory}` : "/tat-ca-san-pham")) +
       `?${next.toString()}`;
     router.push(href);
   }
@@ -877,14 +877,14 @@ export default function ListingPage({
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Trang chủ", item: "https://your-domain.com/" },
-      { "@type": "ListItem", position: 2, name: "Trang trí nhà", item: "https://your-domain.com/trang-tri-nha" },
+      { "@type": "ListItem", position: 2, name: "Tất cả sản phẩm", item: "https://your-domain.com/tat-ca-san-pham" },
       ...(activeCategory
         ? [
             {
               "@type": "ListItem",
               position: 3,
               name: CATEGORIES.find((c) => c.slug === activeCategory)?.label ?? "Danh mục",
-              item: `https://your-domain.com/trang-tri-nha/${activeCategory}`,
+              item: `https://your-domain.com/tat-ca-san-pham/${activeCategory}`,
             },
           ]
         : []),
@@ -902,7 +902,7 @@ export default function ListingPage({
       <nav className="mb-2 text-sm text-neutral-500">
         <Link href="/" className="hover:underline">Trang chủ</Link>
         <span className="mx-2">/</span>
-        <Link href="/trang-tri-nha" className="hover:underline">Trang trí nhà</Link>
+        <Link href="/tat-ca-san-pham" className="hover:underline">Tất cả sản phẩm</Link>
         {activeCategory && (
           <>
             <span className="mx-2">/</span>
@@ -914,7 +914,7 @@ export default function ListingPage({
       </nav>
 
       <h1 className="mb-1 text-3xl font-semibold tracking-wide text-center">
-        {activeCategory ? CATEGORIES.find((c) => c.slug === activeCategory)?.label : "TRANG TRÍ NHÀ"}
+        {activeCategory ? CATEGORIES.find((c) => c.slug === activeCategory)?.label : "TRUNG BÀY & TRANG TRÍ"}
       </h1>
       <p className="mb-6 text-sm text-center text-neutral-500">{total} sản phẩm phù hợp</p>
 
@@ -922,7 +922,7 @@ export default function ListingPage({
       <div className="flex flex-wrap items-center gap-2 mb-6 md:gap-3">
         {CATEGORIES.map((c) => {
           const isActive = (initialCategory ? initialCategory : "") === c.slug;
-          const href = c.slug ? `/trang-tri-nha/${c.slug}` : "/trang-tri-nha";
+          const href = c.slug ? `/tat-ca-san-pham/${c.slug}` : "/tat-ca-san-pham";
           return (
             <Link
               key={c.slug}
@@ -989,8 +989,8 @@ export default function ListingPage({
             const params = new URLSearchParams(sp.toString());
             params.set("page", String(page));
             const base = initialCategory
-              ? `/trang-tri-nha/${initialCategory}`
-              : "/trang-tri-nha";
+              ? `/tat-ca-san-pham/${initialCategory}`
+              : "/tat-ca-san-pham";
             return `${base}?${params.toString()}`;
           }}
         />

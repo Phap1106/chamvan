@@ -3,15 +3,15 @@ import { Suspense } from "react";
 import ListingTrangTriNha from "../_ListingTTN";
 
 export const metadata: Metadata = {
-  title: "Phòng thờ | Chạm Vân",
-  description: "Sản phẩm phòng thờ thuộc bộ sưu tập Trang trí nhà.",
-  alternates: { canonical: "/trang-tri-nha/phong-tho" },
+  title: "Trưng bày | Chạm Vân",
+  description: "Sản phẩm trưng bày thuộc bộ sưu tập Trang trí nhà.",
+  alternates: { canonical: "/trang-tri-nha/trung-bay" },
 };
 
 export default function Page() {
   return (
     <Suspense>
-      <ListingTrangTriNha initialCategory="phong-tho" />
+      <ListingTrangTriNha initialCategory="trung-bay" />
     </Suspense>
   );
 }
