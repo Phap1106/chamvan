@@ -1,3 +1,4 @@
+//src/app/trang-tri-nha/page.tsx
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import ListingTrangTriNha from "./_ListingTTN";

@@ -1,47 +1,65 @@
 'use client';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
-type UserRole = 'USER' | 'ADMIN' | 'SUPPORT_ADMIN';
+type Role = 'admin' | 'support_admin' | 'user';
+type User = { id: string; email: string; fullName: string; role: Role } | null;
+
 type AuthCtx = {
+  user: User;
   isLoggedIn: boolean;
-  role: UserRole | null;
-  login: (role?: UserRole) => void; // demo: cho login dưới vai trò bất kỳ
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshMe: () => Promise<void>;
 };
 
-const Ctx = createContext<AuthCtx | undefined>(undefined);
+const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [role, setRole] = useState<UserRole | null>(null);
+  const [user, setUser] = useState<User>(null);
+  const isLoggedIn = !!user;
+
+  async function refreshMe() {
+    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    if (res.ok) {
+      const u = await res.json();
+      setUser(u);
+    } else {
+      setUser(null);
+    }
+  }
 
   useEffect(() => {
-    const t = localStorage.getItem('token');
-    const r = localStorage.getItem('role') as UserRole | null;
-    setIsLoggedIn(!!t);
-    setRole(r);
+    // Lấy user từ cookie (server → /api/auth/me)
+    refreshMe();
   }, []);
 
-  const login = (r: UserRole = 'USER') => {
-    localStorage.setItem('token', 'demo-token');
-    localStorage.setItem('role', r);
-    setIsLoggedIn(true);
-    setRole(r);
-  };
+  async function login(email: string, password: string) {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(()=>({}));
+      throw new Error(j.message || 'Đăng nhập thất bại');
+    }
+    await refreshMe();
+  }
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    setIsLoggedIn(false);
-    setRole(null);
-  };
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUser(null);
+  }
 
-  const value = useMemo(() => ({ isLoggedIn, role, login, logout }), [isLoggedIn, role]);
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ user, isLoggedIn, login, logout, refreshMe }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
-export const useAuth = () => {
-  const v = useContext(Ctx);
-  if (!v) throw new Error('useAuth must be used within AuthProvider');
-  return v;
-};
+export function useAuth() {
+  const ctx = useContext(Ctx);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}

@@ -1,6 +1,7 @@
+// src/app/qua-tang/page.tsx
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import ListingPage from "../tat-ca-san-pham/shared/ListingPage";
+import ListingQuaTang from "./_ListingQT";
 
 export const metadata: Metadata = {
   title: "Quà tặng | Chạm Vân",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <Suspense>
-      <ListingPage initialCategory="qua-tang" />
+      <ListingQuaTang />
     </Suspense>
   );
 }

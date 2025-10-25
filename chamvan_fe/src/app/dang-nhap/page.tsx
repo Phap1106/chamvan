@@ -8,27 +8,33 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'USER'|'ADMIN'|'SUPPORT_ADMIN'>('USER');
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Sau này gọi API thật, giờ demo:
-    login(role);
-    router.push('/');
+    setErr(null);
+    setLoading(true);
+    try {
+      await login(email, password);
+      router.push('/'); // hoặc /tai-khoan
+    } catch (e: any) {
+      setErr(e?.message || 'Đăng nhập thất bại');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="mx-auto max-w-sm px-4 py-10">
+    <div className="max-w-sm px-4 py-10 mx-auto">
       <h1 className="mb-4 text-xl font-bold">Đăng nhập</h1>
+      {err && <div className="p-3 mb-3 text-sm text-red-700 border border-red-200 rounded bg-red-50">{err}</div>}
       <form onSubmit={onSubmit} className="space-y-3">
-        <input className="w-full border p-2" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
-        <input className="w-full border p-2" placeholder="Mật khẩu" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-        <select className="w-full border p-2" value={role} onChange={e=>setRole(e.target.value as any)}>
-          <option value="USER">USER</option>
-          <option value="ADMIN">ADMIN</option>
-          <option value="SUPPORT_ADMIN">SUPPORT ADMIN</option>
-        </select>
-        <button className="w-full bg-black py-2 text-white">Đăng nhập</button>
+        <input className="w-full p-2 border rounded" placeholder="Email" type="email" value={email} onChange={e=>setEmail(e.target.value)} />
+        <input className="w-full p-2 border rounded" placeholder="Mật khẩu" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+        <button className="w-full py-2 text-white bg-black rounded disabled:opacity-60" disabled={loading}>
+          {loading ? 'Đang đăng nhập…' : 'Đăng nhập'}
+        </button>
       </form>
     </div>
   );
