@@ -60,20 +60,15 @@ let AuthService = class AuthService {
         this.jwt = jwt;
     }
     async validateUser(email, pass) {
-        const normalized = (email ?? '').trim().toLowerCase();
-        const withPassword = await this.users
-            .createQueryBuilder('u')
-            .addSelect('u.password')
-            .where('LOWER(u.email) = :email', { email: normalized })
-            .getOne();
-        console.log('[Auth] login email=', normalized, 'found=', !!withPassword);
-        if (!withPassword) {
-            throw new common_1.UnauthorizedException('Email hoặc mật khẩu không đúng');
-        }
-        const ok = await bcrypt.compare(pass ?? '', withPassword.password);
-        console.log('[Auth] compare ok =', ok);
+        const withPassword = await this.users.findOne({
+            where: { email },
+            select: ['id', 'email', 'password', 'fullName', 'role'],
+        });
+        if (!withPassword)
+            throw new common_1.UnauthorizedException('Sai tài khoản hoặc mật khẩu');
+        const ok = await bcrypt.compare(pass, withPassword.password || '');
         if (!ok)
-            throw new common_1.UnauthorizedException('Email hoặc mật khẩu không đúng');
+            throw new common_1.UnauthorizedException('Sai tài khoản hoặc mật khẩu');
         const { password, ...safe } = withPassword;
         return safe;
     }

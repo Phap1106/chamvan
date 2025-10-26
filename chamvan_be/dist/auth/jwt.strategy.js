@@ -13,16 +13,52 @@ exports.JwtStrategy = void 0;
 const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
-const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
+function cookieExtractor(req) {
+    try {
+        const c = req?.cookies ?? {};
+        const token = c.cv_token || c.cv_access_token || c.token || null;
+        if (process.env.AUTH_DEBUG === '1') {
+            console.log('[AUTH] cookieExtractor:', {
+                found: !!token,
+                name: token
+                    ? (c.cv_token && 'cv_token') || (c.cv_access_token && 'cv_access_token') || (c.token && 'token')
+                    : null,
+                first16: token?.slice?.(0, 16),
+            });
+        }
+        return token;
+    }
+    catch {
+        return null;
+    }
+}
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
     constructor() {
-        super({
-            jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+        const opts = {
+            jwtFromRequest: passport_jwt_1.ExtractJwt.fromExtractors([
+                (req) => cookieExtractor(req),
+                passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ]),
             ignoreExpiration: false,
-            secretOrKey: JWT_SECRET,
-        });
+            secretOrKey: process.env.JWT_SECRET,
+        };
+        if (process.env.AUTH_DEBUG === '1') {
+            console.log('[AUTH] JwtStrategy init', {
+                secretHasValue: !!process.env.JWT_SECRET,
+                secretLen: process.env.JWT_SECRET?.length,
+            });
+        }
+        super(opts);
     }
     async validate(payload) {
+        if (process.env.AUTH_DEBUG === '1') {
+            console.log('[AUTH] validate payload:', {
+                sub: payload?.sub,
+                email: payload?.email,
+                role: payload?.role,
+                keys: Object.keys(payload || {}),
+            });
+        }
         return { id: payload.sub, email: payload.email, role: payload.role };
     }
 };

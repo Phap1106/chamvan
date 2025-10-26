@@ -1,3 +1,4 @@
+//src/components/providers/AuthProvider.tsx
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
 
@@ -46,10 +47,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await refreshMe();
   }
 
-  async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    setUser(null);
-  }
+  // async function logout() {
+  //   await fetch('/api/auth/logout', { method: 'POST' });
+  //   setUser(null);
+  // }
+
+
+// src/components/providers/AuthProvider.tsx
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  setUser(null);
+  if (typeof window !== 'undefined') window.location.reload();
+}
+
+
+
+
 
   return (
     <Ctx.Provider value={{ user, isLoggedIn, login, logout, refreshMe }}>

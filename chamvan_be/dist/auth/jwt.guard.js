@@ -10,6 +10,24 @@ exports.JwtAuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
 let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
+    handleRequest(err, user, info, context) {
+        if (process.env.AUTH_DEBUG === '1') {
+            const req = context.switchToHttp().getRequest();
+            const ck = req.cookies?.cv_token || req.cookies?.cv_access_token || req.cookies?.token;
+            console.log('[AUTH] guard.handleRequest', {
+                hasUser: !!user,
+                err: err?.message || err,
+                info: typeof info === 'string' ? info : info?.message || info?.name,
+                cookieFirst16: ck?.slice?.(0, 16),
+                authHeader: req.headers?.authorization,
+                url: req.originalUrl,
+            });
+        }
+        if (err || !user) {
+            throw err || new common_1.UnauthorizedException(info?.message || 'Unauthorized');
+        }
+        return user;
+    }
 };
 exports.JwtAuthGuard = JwtAuthGuard;
 exports.JwtAuthGuard = JwtAuthGuard = __decorate([

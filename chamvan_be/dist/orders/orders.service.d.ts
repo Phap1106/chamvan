@@ -64,12 +64,12 @@ export declare class OrdersService {
     findAllForAdmin(): Promise<{
         items: {
             name: string | undefined;
+            unitPrice: number;
+            qty: number;
+            lineTotal: number;
             id: number;
             order: Order;
             productId: number;
-            qty: number;
-            unitPrice: number;
-            lineTotal: number;
         }[];
         subtotal: number;
         total: number;

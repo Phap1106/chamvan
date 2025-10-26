@@ -63,12 +63,12 @@ export declare class OrdersAdminController {
     findAll(): Promise<{
         items: {
             name: string | undefined;
+            unitPrice: number;
+            qty: number;
+            lineTotal: number;
             id: number;
             order: import("./order.entity").Order;
             productId: number;
-            qty: number;
-            unitPrice: number;
-            lineTotal: number;
         }[];
         subtotal: number;
         total: number;

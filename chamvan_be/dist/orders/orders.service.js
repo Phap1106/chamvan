@@ -30,7 +30,7 @@ let OrdersService = class OrdersService {
     }
     async create(dto, userId) {
         const ids = dto.items.map((i) => Number(i.productId)).filter((x) => Number.isInteger(x));
-        const prods = await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } });
+        const prods = ids.length ? await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } }) : [];
         const priceMap = new Map(prods.map((p) => [p.id, Number(p.price) || 0]));
         const nameMap = new Map(prods.map((p) => [p.id, p.name]));
         let subtotal = 0;
@@ -68,7 +68,7 @@ let OrdersService = class OrdersService {
         if (!order)
             throw new common_1.NotFoundException('Order not found');
         const ids = order.items.map((i) => i.productId);
-        const prods = await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } });
+        const prods = ids.length ? await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } }) : [];
         const nameMap = new Map(prods.map((p) => [p.id, p.name]));
         order.items = order.items.map((i) => ({ ...i, name: nameMap.get(i.productId) }));
         return order;
@@ -86,23 +86,18 @@ let OrdersService = class OrdersService {
         const ids = Array.from(new Set(orders.flatMap((o) => o.items.map((i) => i.productId))));
         const prods = ids.length ? await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } }) : [];
         const nameMap = new Map(prods.map((p) => [p.id, p.name]));
-        return orders.map((o) => ({
-            ...o,
-            items: o.items.map((i) => {
+        return orders.map((o) => {
+            const items = o.items.map((i) => {
                 const unitPrice = Number(i.unitPrice) || 0;
                 const qty = Number(i.qty) || 0;
                 const lineTotal = unitPrice * qty;
-                return {
-                    ...i,
-                    name: nameMap.get(i.productId),
-                    unitPrice,
-                    qty,
-                    lineTotal,
-                };
-            }),
-            subtotal: o.items.reduce((s, it) => s + (Number(it.unitPrice) || 0) * (Number(it.qty) || 0), 0),
-            total: (o.items.reduce((s, it) => s + (Number(it.unitPrice) || 0) * (Number(it.qty) || 0), 0)) + (Number(o.shippingFee) || 0),
-        }));
+                return { ...i, name: nameMap.get(i.productId), unitPrice, qty, lineTotal };
+            });
+            const subtotal = items.reduce((s, it) => s + it.lineTotal, 0);
+            const shippingFee = Number(o.shippingFee) || 0;
+            const total = subtotal + shippingFee;
+            return { ...o, items, subtotal, total };
+        });
     }
     async findAllForAdmin() {
         const orders = await this.orderRepo.find({
@@ -112,12 +107,18 @@ let OrdersService = class OrdersService {
         const ids = Array.from(new Set(orders.flatMap((o) => o.items.map((i) => i.productId))));
         const prods = ids.length ? await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } }) : [];
         const nameMap = new Map(prods.map((p) => [p.id, p.name]));
-        return orders.map((o) => ({
-            ...o,
-            items: o.items.map((i) => ({ ...i, name: nameMap.get(i.productId) })),
-            subtotal: o.items.reduce((s, it) => s + (Number(it.unitPrice) || 0) * (Number(it.qty) || 0), 0),
-            total: (o.items.reduce((s, it) => s + (Number(it.unitPrice) || 0) * (Number(it.qty) || 0), 0)) + (Number(o.shippingFee) || 0),
-        }));
+        return orders.map((o) => {
+            const items = o.items.map((i) => {
+                const unitPrice = Number(i.unitPrice) || 0;
+                const qty = Number(i.qty) || 0;
+                const lineTotal = unitPrice * qty;
+                return { ...i, name: nameMap.get(i.productId), unitPrice, qty, lineTotal };
+            });
+            const subtotal = items.reduce((s, it) => s + it.lineTotal, 0);
+            const shippingFee = Number(o.shippingFee) || 0;
+            const total = subtotal + shippingFee;
+            return { ...o, items, subtotal, total };
+        });
     }
     async updateStatus(id, body) {
         if (!Number.isInteger(id))

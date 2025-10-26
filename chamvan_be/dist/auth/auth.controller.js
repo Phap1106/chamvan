@@ -33,17 +33,28 @@ let AuthController = class AuthController {
     constructor(auth) {
         this.auth = auth;
     }
-    async login(dto) {
+    async login(dto, res) {
         const user = await this.auth.validateUser(dto.email, dto.password);
-        return this.auth.login(user);
+        const { access_token, user: safeUser } = await this.auth.login(user);
+        if (process.env.AUTH_DEBUG === '1') {
+            console.log('[AUTH] set-cookie cv_token first16:', access_token.slice(0, 16));
+        }
+        res.cookie('cv_token', access_token, {
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        return { access_token, user: safeUser };
     }
 };
 exports.AuthController = AuthController;
 __decorate([
     (0, common_1.Post)('login'),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [LoginDto]),
+    __metadata("design:paramtypes", [LoginDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 exports.AuthController = AuthController = __decorate([

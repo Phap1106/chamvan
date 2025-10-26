@@ -16,6 +16,8 @@ exports.OrdersAdminController = exports.OrdersPublicController = void 0;
 const common_1 = require("@nestjs/common");
 const orders_service_1 = require("./orders.service");
 const create_order_dto_1 = require("./dto/create-order.dto");
+const jwt_guard_1 = require("../auth/jwt.guard");
+const optional_jwt_auth_guard_1 = require("../auth/guards/optional-jwt-auth.guard");
 let OrdersPublicController = class OrdersPublicController {
     orders;
     constructor(orders) {
@@ -26,11 +28,14 @@ let OrdersPublicController = class OrdersPublicController {
         return this.orders.create(dto, userId);
     }
     async myOrders(req) {
-        const userId = req?.user?.id ?? null;
-        if (!Number.isInteger(Number(userId))) {
-            return [];
+        if (process.env.AUTH_DEBUG === '1') {
+            console.log('[ORDERS] /orders/my req.user =', req?.user);
         }
-        return this.orders.findMine(Number(userId));
+        const userId = Number(req?.user?.id);
+        if (!Number.isInteger(userId)) {
+            throw new common_1.BadRequestException('Invalid user');
+        }
+        return this.orders.findMine(userId);
     }
     findOne(id) {
         const n = Number(id);
@@ -42,6 +47,7 @@ let OrdersPublicController = class OrdersPublicController {
 };
 exports.OrdersPublicController = OrdersPublicController;
 __decorate([
+    (0, common_1.UseGuards)(optional_jwt_auth_guard_1.OptionalJwtAuthGuard),
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
@@ -50,6 +56,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], OrdersPublicController.prototype, "create", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard),
     (0, common_1.Get)('my'),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
