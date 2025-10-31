@@ -1,6 +1,12 @@
 // chamvan_fe/src/app/cau-chuyen-cham-van/page.tsx
 "use client";
 
+
+
+
+
+
+
 import Image from "next/image";
 
 export default function StoryPage() {

@@ -21,6 +21,8 @@ const nextConfig = {
       // (Nếu cần chi tiết mạng con fna)
       { protocol: 'https', hostname: '*.fna.fbcdn.net', pathname: '/**' },
     ],
+      deviceSizes: [640, 750, 828, 1080, 1200, 1440, 1680, 1920],
+    imageSizes: [400, 430, 451, 512, 768],
   },
 };
 
