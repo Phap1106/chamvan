@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TelegramRecipient = void 0;
+exports.TelegramTemplate = exports.TelegramRecipient = void 0;
 const typeorm_1 = require("typeorm");
 let TelegramRecipient = class TelegramRecipient {
     id;
@@ -29,22 +29,53 @@ __decorate([
     __metadata("design:type", String)
 ], TelegramRecipient.prototype, "chat_id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ length: 128, nullable: true }),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'varchar', length: 128, nullable: true }),
+    __metadata("design:type", Object)
 ], TelegramRecipient.prototype, "display_name", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: true }),
+    (0, typeorm_1.Column)({ type: 'tinyint', width: 1, default: 1 }),
     __metadata("design:type", Boolean)
 ], TelegramRecipient.prototype, "is_active", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], TelegramRecipient.prototype, "created_at", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)(),
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
     __metadata("design:type", Date)
 ], TelegramRecipient.prototype, "updated_at", void 0);
 exports.TelegramRecipient = TelegramRecipient = __decorate([
-    (0, typeorm_1.Entity)({ name: 'telegram_recipients' })
+    (0, typeorm_1.Entity)('telegram_recipients')
 ], TelegramRecipient);
+let TelegramTemplate = class TelegramTemplate {
+    id;
+    key;
+    content;
+    created_at;
+    updated_at;
+};
+exports.TelegramTemplate = TelegramTemplate;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)(),
+    __metadata("design:type", Number)
+], TelegramTemplate.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', length: 64, unique: true }),
+    __metadata("design:type", String)
+], TelegramTemplate.prototype, "key", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text' }),
+    __metadata("design:type", String)
+], TelegramTemplate.prototype, "content", void 0);
+__decorate([
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
+    __metadata("design:type", Date)
+], TelegramTemplate.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
+    __metadata("design:type", Date)
+], TelegramTemplate.prototype, "updated_at", void 0);
+exports.TelegramTemplate = TelegramTemplate = __decorate([
+    (0, typeorm_1.Entity)('telegram_templates')
+], TelegramTemplate);
 //# sourceMappingURL=telegram-recipient.entity.js.map

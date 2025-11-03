@@ -19,58 +19,97 @@ const typeorm_2 = require("typeorm");
 const order_entity_1 = require("./order.entity");
 const order_item_entity_1 = require("./order-item.entity");
 const product_entity_1 = require("../products/product.entity");
+const user_entity_1 = require("../users/user.entity");
 const zalo_service_1 = require("../integrations/zalo/zalo.service");
 const telegram_service_1 = require("../integrations/telegram/telegram.service");
 let OrdersService = class OrdersService {
     orderRepo;
     itemRepo;
     productRepo;
+    userRepo;
     zalo;
     telegram;
-    constructor(orderRepo, itemRepo, productRepo, zalo, telegram) {
+    constructor(orderRepo, itemRepo, productRepo, userRepo, zalo, telegram) {
         this.orderRepo = orderRepo;
         this.itemRepo = itemRepo;
         this.productRepo = productRepo;
+        this.userRepo = userRepo;
         this.zalo = zalo;
         this.telegram = telegram;
     }
     async create(dto, userId) {
-        const ids = dto.items.map((i) => Number(i.productId)).filter((x) => Number.isInteger(x));
-        const prods = ids.length ? await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } }) : [];
-        const priceMap = new Map(prods.map((p) => [p.id, Number(p.price) || 0]));
-        const nameMap = new Map(prods.map((p) => [p.id, p.name]));
+        let user = null;
+        if (userId) {
+            user = await this.userRepo.findOne({ where: { id: String(userId) } });
+        }
+        const customerEmail = (user?.email ?? dto?.customerEmail ?? dto?.email ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
+        const customerName = dto?.customerName ??
+            dto?.name ??
+            (user?.fullName ?? '');
+        const customerPhone = dto?.customerPhone ??
+            dto?.phone ??
+            (user?.phone ?? null);
+        let numericUserId = null;
+        if (typeof userId === 'number') {
+            numericUserId = Number.isFinite(userId) ? userId : null;
+        }
+        else if (typeof userId === 'string') {
+            const asNum = Number(userId);
+            numericUserId = Number.isInteger(asNum) ? asNum : null;
+        }
+        const itemsInput = Array.isArray(dto?.items) ? dto.items : [];
+        const itemsToCreate = [];
         let subtotal = 0;
-        const itemsData = dto.items.map((i) => {
-            const pid = Number(i.productId);
-            const qty = Number(i.qty) || 0;
-            const unitPrice = priceMap.get(pid) ?? 0;
-            const lineTotal = unitPrice * qty;
+        const numericPids = Array.from(new Set(itemsInput.map((i) => Number(i?.productId)).filter((x) => Number.isInteger(x))));
+        const products = numericPids.length
+            ? await this.productRepo.find({ where: { id: (0, typeorm_2.In)(numericPids) } })
+            : [];
+        const priceMap = new Map(products.map((p) => [p.id, Number(p.price) || 0]));
+        for (const it of itemsInput) {
+            const pidNum = Number(it?.productId);
+            const qty = Number(it?.qty ?? 0) || 0;
+            if (qty <= 0)
+                continue;
+            const unitPrice = (Number(it?.unitPrice) || 0) ||
+                (Number(it?.price) || 0) ||
+                (Number.isInteger(pidNum) ? priceMap.get(pidNum) ?? 0 : 0);
+            const lineTotal = qty * unitPrice;
             subtotal += lineTotal;
-            return { productId: pid, qty, unitPrice, lineTotal };
-        });
+            const item = this.itemRepo.create();
+            item.productId = Number.isInteger(pidNum) ? pidNum : it?.productId;
+            item.qty = qty;
+            item.unitPrice = unitPrice;
+            item.lineTotal = lineTotal;
+            itemsToCreate.push(item);
+        }
+        const shippingFee = Number(dto?.shippingFee ?? 0) || 0;
         const order = this.orderRepo.create({
-            customerName: dto.customerName,
-            customerEmail: dto.customerEmail,
-            customerPhone: dto.customerPhone ?? null,
-            customerDob: dto.customerDob ?? null,
-            shippingAddress: dto.shippingAddress ?? null,
-            notes: dto.notes ?? null,
+            userId: numericUserId,
+            customerName,
+            customerEmail,
+            customerPhone,
+            customerDob: dto?.customerDob ?? null,
+            shippingAddress: dto?.shippingAddress ?? null,
+            notes: dto?.notes ?? null,
             subtotal,
-            shippingFee: 0,
-            total: subtotal,
-            status: 'chờ duyệt',
-            userId: userId ?? null,
+            shippingFee,
+            total: subtotal + shippingFee,
+            status: dto?.status ?? 'chờ duyệt',
+            eta: dto?.eta ?? null,
         });
         const saved = await this.orderRepo.save(order);
-        const items = itemsData.map((d) => this.itemRepo.create({ ...d, order: saved }));
-        await this.itemRepo.save(items);
-        const withNames = items.map((i) => ({ ...i, name: nameMap.get(i.productId) }));
-        const result = { ...saved, items: withNames };
+        for (const it of itemsToCreate) {
+            it.order = saved;
+            await this.itemRepo.save(it);
+        }
         try {
-            await this.notifyAdminsOrderCreatedSafe(result);
+            await this.notifyAdminsOrderCreatedSafe({ ...saved, items: itemsToCreate });
         }
         catch { }
-        return result;
+        return { id: saved.id, code: saved?.code ?? null, success: true };
     }
     async findOne(id) {
         if (!Number.isInteger(id))
@@ -81,34 +120,32 @@ let OrdersService = class OrdersService {
         const ids = order.items.map((i) => i.productId);
         const prods = ids.length ? await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } }) : [];
         const nameMap = new Map(prods.map((p) => [p.id, p.name]));
-        order.items = order.items.map((i) => ({ ...i, name: nameMap.get(i.productId) }));
+        order.items = order.items.map((i) => ({
+            ...i,
+            name: i.name ?? nameMap.get(i.productId),
+        }));
         return order;
     }
     async findMine(userId) {
-        if (!Number.isInteger(userId))
-            throw new common_1.BadRequestException('Invalid userId');
-        const orders = await this.orderRepo.find({
-            where: { userId },
-            order: { createdAt: 'DESC' },
+        const ors = [];
+        const asNum = Number(userId);
+        if (Number.isInteger(asNum)) {
+            ors.push({ userId: asNum });
+        }
+        const user = await this.userRepo.findOne({ where: { id: String(userId) } });
+        const email = user?.email ? user.email.trim().toLowerCase() : null;
+        if (email) {
+            ors.push({ customerEmail: email });
+        }
+        if (!ors.length) {
+            return { items: [], total: 0 };
+        }
+        const [items, total] = await this.orderRepo.findAndCount({
+            where: ors,
             relations: ['items'],
+            order: { createdAt: 'DESC' },
         });
-        if (!orders.length)
-            return [];
-        const ids = Array.from(new Set(orders.flatMap((o) => o.items.map((i) => i.productId))));
-        const prods = ids.length ? await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } }) : [];
-        const nameMap = new Map(prods.map((p) => [p.id, p.name]));
-        return orders.map((o) => {
-            const items = o.items.map((i) => {
-                const unitPrice = Number(i.unitPrice) || 0;
-                const qty = Number(i.qty) || 0;
-                const lineTotal = unitPrice * qty;
-                return { ...i, name: nameMap.get(i.productId), unitPrice, qty, lineTotal };
-            });
-            const subtotal = items.reduce((s, it) => s + it.lineTotal, 0);
-            const shippingFee = Number(o.shippingFee) || 0;
-            const total = subtotal + shippingFee;
-            return { ...o, items, subtotal, total };
-        });
+        return { items, total };
     }
     async findAllForAdmin() {
         const orders = await this.orderRepo.find({
@@ -123,7 +160,13 @@ let OrdersService = class OrdersService {
                 const unitPrice = Number(i.unitPrice) || 0;
                 const qty = Number(i.qty) || 0;
                 const lineTotal = unitPrice * qty;
-                return { ...i, name: nameMap.get(i.productId), unitPrice, qty, lineTotal };
+                return {
+                    ...i,
+                    name: i.name ?? nameMap.get(i.productId),
+                    unitPrice,
+                    qty,
+                    lineTotal,
+                };
             });
             const subtotal = items.reduce((s, it) => s + it.lineTotal, 0);
             const shippingFee = Number(o.shippingFee) || 0;
@@ -143,12 +186,6 @@ let OrdersService = class OrdersService {
             order.eta = body.eta;
         await this.orderRepo.save(order);
         return order;
-    }
-    isSuccessStatus(status) {
-        if (!status)
-            return false;
-        const ok = ['paid', 'success', 'confirmed', 'completed'];
-        return ok.includes(String(status).toLowerCase());
     }
     async enrichOrderForNotify(orderId) {
         const order = await this.orderRepo.findOne({
@@ -192,7 +229,9 @@ exports.OrdersService = OrdersService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(order_entity_1.Order)),
     __param(1, (0, typeorm_1.InjectRepository)(order_item_entity_1.OrderItem)),
     __param(2, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
+    __param(3, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
         zalo_service_1.ZaloService,

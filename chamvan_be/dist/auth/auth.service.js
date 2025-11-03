@@ -52,12 +52,22 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("../users/user.entity");
 const jwt_1 = require("@nestjs/jwt");
+const mailer_service_1 = require("./mailer.service");
+function randomPassword(len = 8) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let out = '';
+    for (let i = 0; i < len; i++)
+        out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+}
 let AuthService = class AuthService {
     users;
     jwt;
-    constructor(users, jwt) {
+    mailer;
+    constructor(users, jwt, mailer) {
         this.users = users;
         this.jwt = jwt;
+        this.mailer = mailer;
     }
     async validateUser(email, pass) {
         const withPassword = await this.users.findOne({
@@ -81,12 +91,23 @@ let AuthService = class AuthService {
         const access_token = await this.jwt.signAsync(payload);
         return { access_token, user };
     }
+    async forgotPassword(email) {
+        const user = await this.users.findOne({ where: { email } });
+        if (!user)
+            throw new common_1.NotFoundException('Email không tồn tại');
+        const newPass = randomPassword(8);
+        const hashed = await bcrypt.hash(newPass, 10);
+        await this.users.update({ id: user.id }, { password: hashed });
+        await this.mailer.resetPasswordEmail(user.email, newPass);
+        return { ok: true };
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        mailer_service_1.MailerService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

@@ -149,6 +149,29 @@ let UsersService = class UsersService {
     async findById(id) {
         return this.assertExists(id);
     }
+    async findWithPassword(id) {
+        const u = await this.repo.findOne({
+            where: { id },
+            select: ['id', 'password', 'tokenVersion'],
+        });
+        if (!u)
+            throw new common_1.NotFoundException('User not found');
+        return u;
+    }
+    async changePassword(userId, dto) {
+        const u = await this.findWithPassword(userId);
+        const ok = await bcrypt.compare(dto.currentPassword, u.password || '');
+        if (!ok) {
+            throw new common_1.BadRequestException('Mật khẩu hiện tại không đúng');
+        }
+        const salt = await bcrypt.genSalt(10);
+        const hashed = await bcrypt.hash(dto.newPassword, salt);
+        await this.repo.update({ id: userId }, {
+            password: hashed,
+            tokenVersion: (u.tokenVersion || 0) + 1,
+        });
+        return { success: true };
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

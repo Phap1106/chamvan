@@ -28,6 +28,13 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], LoginDto.prototype, "password", void 0);
+class ForgotDto {
+    email;
+}
+__decorate([
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], ForgotDto.prototype, "email", void 0);
 let AuthController = class AuthController {
     auth;
     constructor(auth) {
@@ -47,6 +54,10 @@ let AuthController = class AuthController {
         });
         return { access_token, user: safeUser };
     }
+    async forgot(dto) {
+        await this.auth.forgotPassword(dto.email.trim().toLowerCase());
+        return { ok: true };
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -57,6 +68,13 @@ __decorate([
     __metadata("design:paramtypes", [LoginDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('forgot-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [ForgotDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgot", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

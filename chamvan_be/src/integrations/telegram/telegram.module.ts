@@ -1,3 +1,4 @@
+// chamvan_be/src/integrations/telegram/telegram.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TelegramConfig } from './entities/telegram-config.entity';

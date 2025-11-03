@@ -15,22 +15,58 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TelegramAdminController = void 0;
 const common_1 = require("@nestjs/common");
 const telegram_service_1 = require("./telegram.service");
-const telegram_dto_1 = require("./dto/telegram.dto");
 let TelegramAdminController = class TelegramAdminController {
     tg;
     constructor(tg) {
         this.tg = tg;
     }
-    getToken() { return this.tg.getToken(); }
-    updateToken(dto) { return this.tg.updateToken(dto); }
-    listRecipients() { return this.tg.listRecipients(); }
-    upsertRecipient(dto) { return this.tg.upsertRecipient(dto); }
-    removeRecipient(id) { return this.tg.removeRecipient(Number(id)); }
-    getTpl(key = 'ORDER_SUCCESS') { return this.tg.getTemplate(key); }
-    setTpl(dto) { return this.tg.setTemplate(dto.key, dto.content); }
-    sendManual(dto) { return this.tg.sendText(dto.chat_id, dto.text); }
-    ping(id) { return this.tg.sendText(id, 'Ping từ hệ thống 👋'); }
-    getUpdates(offset) {
+    async getToken() {
+        try {
+            return await this.tg.getToken();
+        }
+        catch (e) {
+            throw new common_1.BadRequestException(e?.message || 'getToken failed');
+        }
+    }
+    async setToken(dto) {
+        try {
+            return await this.tg.updateToken({ bot_token: dto.bot_token ?? null });
+        }
+        catch (e) {
+            throw new common_1.BadRequestException(e?.message || 'updateToken failed');
+        }
+    }
+    listRecipients() {
+        return this.tg.listRecipients();
+    }
+    upsertRecipient(dto) {
+        return this.tg.upsertRecipient(dto);
+    }
+    async removeRecipient(id) {
+        await this.tg.removeRecipient(Number(id));
+        return { ok: true };
+    }
+    async getTpl(key = 'ORDER_SUCCESS') {
+        return this.tg.getTemplate(key);
+    }
+    async setTpl(dto) {
+        return this.tg.setTemplate(dto.key, dto.content);
+    }
+    async ping(dto) {
+        const text = dto.text || 'Ping từ CHẠM VÂN';
+        if (dto.chat_id)
+            return this.tg.sendText(String(dto.chat_id), text);
+        const recs = await this.tg.listRecipients();
+        const actives = recs.filter(r => r.is_active);
+        for (const r of actives) {
+            try {
+                await this.tg.sendText(String(r.chat_id), text);
+            }
+            catch { }
+        }
+        return { ok: true, count: actives.length };
+    }
+    async updates(offset) {
         return this.tg.getUpdates(offset ? Number(offset) : undefined);
     }
 };
@@ -39,15 +75,15 @@ __decorate([
     (0, common_1.Get)('token'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TelegramAdminController.prototype, "getToken", null);
 __decorate([
     (0, common_1.Put)('token'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [telegram_dto_1.UpdateBotTokenDto]),
-    __metadata("design:returntype", void 0)
-], TelegramAdminController.prototype, "updateToken", null);
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], TelegramAdminController.prototype, "setToken", null);
 __decorate([
     (0, common_1.Get)('recipients'),
     __metadata("design:type", Function),
@@ -58,7 +94,7 @@ __decorate([
     (0, common_1.Post)('recipients'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [telegram_dto_1.UpsertRecipientDto]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], TelegramAdminController.prototype, "upsertRecipient", null);
 __decorate([
@@ -66,43 +102,36 @@ __decorate([
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TelegramAdminController.prototype, "removeRecipient", null);
 __decorate([
     (0, common_1.Get)('templates'),
     __param(0, (0, common_1.Query)('key')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TelegramAdminController.prototype, "getTpl", null);
 __decorate([
     (0, common_1.Put)('templates'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [telegram_dto_1.UpdateTemplateDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
 ], TelegramAdminController.prototype, "setTpl", null);
 __decorate([
-    (0, common_1.Post)('send'),
+    (0, common_1.Post)('ping'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [telegram_dto_1.SendManualDto]),
-    __metadata("design:returntype", void 0)
-], TelegramAdminController.prototype, "sendManual", null);
-__decorate([
-    (0, common_1.Post)('ping'),
-    __param(0, (0, common_1.Body)('chat_id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
 ], TelegramAdminController.prototype, "ping", null);
 __decorate([
     (0, common_1.Get)('updates'),
     __param(0, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], TelegramAdminController.prototype, "getUpdates", null);
+    __metadata("design:returntype", Promise)
+], TelegramAdminController.prototype, "updates", null);
 exports.TelegramAdminController = TelegramAdminController = __decorate([
     (0, common_1.Controller)('admin/telegram'),
     __metadata("design:paramtypes", [telegram_service_1.TelegramService])

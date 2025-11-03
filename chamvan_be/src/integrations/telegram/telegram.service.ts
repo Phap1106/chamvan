@@ -1,32 +1,45 @@
+// chamvan_be/src/integrations/telegram/telegram.service.ts
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
-import { DataSource, Repository } from 'typeorm';
+import { Repository, DeepPartial } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { TelegramConfig } from './entities/telegram-config.entity';
 import { TelegramRecipient } from './entities/telegram-recipient.entity';
 import { TelegramTemplate } from './entities/telegram-template.entity';
 
 @Injectable()
 export class TelegramService {
-  private cfgRepo: Repository<TelegramConfig>;
-  private recRepo: Repository<TelegramRecipient>;
-  private tplRepo: Repository<TelegramTemplate>;
+  constructor(
+    @InjectRepository(TelegramConfig)
+    private readonly cfgRepo: Repository<TelegramConfig>,
+    @InjectRepository(TelegramRecipient)
+    private readonly recRepo: Repository<TelegramRecipient>,
+    @InjectRepository(TelegramTemplate)
+    private readonly tplRepo: Repository<TelegramTemplate>,
+  ) {}
 
-  constructor(ds: DataSource) {
-    this.cfgRepo = ds.getRepository(TelegramConfig);
-    this.recRepo = ds.getRepository(TelegramRecipient);
-    this.tplRepo = ds.getRepository(TelegramTemplate);
-  }
-
-  // ===== Token =====
-  async getToken() {
-    const cfg = await this.cfgRepo.findOne({ where: { id: 1 } });
+  /* ---------------- TOKEN ---------------- */
+  /** Luôn đảm bảo có record id=1 (tự seed nếu thiếu) */
+  async getToken(): Promise<TelegramConfig> {
+    let cfg = await this.cfgRepo.findOne({ where: { id: 1 } });
+    if (!cfg) {
+      const seed: DeepPartial<TelegramConfig> = {
+        id: 1,
+        // entity không nhận null -> để undefined nếu chưa có ENV
+        bot_token: process.env.TELEGRAM_BOT_TOKEN || undefined,
+      };
+      cfg = this.cfgRepo.create(seed);
+      cfg = await this.cfgRepo.save(cfg);
+    }
     return cfg;
   }
+
   async updateToken(partial: Partial<TelegramConfig>) {
     const existed = await this.getToken();
-    const merged = this.cfgRepo.merge(existed ?? this.cfgRepo.create({ id: 1 }), partial);
+    const merged = this.cfgRepo.merge(existed, partial);
     return this.cfgRepo.save(merged);
   }
+
   private async token() {
     const cfg = await this.getToken();
     const t = cfg?.bot_token || process.env.TELEGRAM_BOT_TOKEN;
@@ -34,34 +47,52 @@ export class TelegramService {
     return t;
   }
 
-  // ===== Recipients =====
-  listRecipients() { return this.recRepo.find({ order: { created_at: 'DESC' } }); }
+  /* ---------------- RECIPIENTS ---------------- */
+  listRecipients() {
+    return this.recRepo.find({ order: { created_at: 'DESC' } });
+  }
+
   async upsertRecipient(dto: { chat_id: string; display_name?: string; is_active?: boolean }) {
-    const existed = await this.recRepo.findOne({ where: { chat_id: String(dto.chat_id) } });
+    const chatId = String(dto.chat_id);
+    const existed = await this.recRepo.findOne({ where: { chat_id: chatId } });
     if (existed) {
       existed.display_name = dto.display_name ?? existed.display_name;
       if (typeof dto.is_active === 'boolean') existed.is_active = dto.is_active;
       return this.recRepo.save(existed);
     }
-    return this.recRepo.save(this.recRepo.create({
-      chat_id: String(dto.chat_id),
+    const seed: DeepPartial<TelegramRecipient> = {
+      chat_id: chatId,
       display_name: dto.display_name,
       is_active: dto.is_active ?? true,
-    }));
+    };
+    return this.recRepo.save(this.recRepo.create(seed));
   }
-  async removeRecipient(id: number) { await this.recRepo.delete(id); return { ok: true }; }
 
-  // ===== Templates =====
+  async removeRecipient(id: number) {
+    await this.recRepo.delete(id);
+    return { ok: true };
+  }
+
+  /* ---------------- TEMPLATES ---------------- */
   async getTemplate(key: string) {
     let tpl = await this.tplRepo.findOne({ where: { key } });
-    if (!tpl) tpl = await this.tplRepo.save(this.tplRepo.create({ key, content: '' }));
+    if (!tpl) {
+      const seed: DeepPartial<TelegramTemplate> = {
+        key,
+        content:
+          '🛒 ĐƠN HÀNG MỚI — CHỜ DUYỆT\n• Mã: {{code}}\n• Khách: {{customer}}\n• Tổng: {{total}}₫\n• Sản phẩm: {{items}}\n• Thời gian: {{time}}\n• Link: {{link}}',
+      };
+      tpl = await this.tplRepo.save(this.tplRepo.create(seed));
+    }
     return tpl;
   }
+
   setTemplate(key: string, content: string) {
-    return this.tplRepo.save(this.tplRepo.create({ key, content }));
+    const seed: DeepPartial<TelegramTemplate> = { key, content };
+    return this.tplRepo.save(this.tplRepo.create(seed));
   }
 
-  // ===== Telegram API =====
+  /* ---------------- TELEGRAM API ---------------- */
   private async api(path: string, body?: any) {
     const token = await this.token();
     const url = `https://api.telegram.org/bot${token}${path}`;
@@ -70,18 +101,22 @@ export class TelegramService {
   }
 
   async sendText(chat_id: string, text: string) {
-    return this.api('/sendMessage', { chat_id, text, parse_mode: 'HTML', disable_web_page_preview: true });
+    return this.api('/sendMessage', {
+      chat_id,
+      text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+    });
   }
 
-  // Hỗ trợ lấy updates để phát hiện chat_id mới (admin vừa nhắn bot)
   async getUpdates(offset?: number) {
     const token = await this.token();
     const url = `https://api.telegram.org/bot${token}/getUpdates`;
     const res = await axios.get(url, { params: { offset: offset ?? undefined, timeout: 0 } });
-    return res.data; // trả về để FE tiện hiển thị
+    return res.data;
   }
 
-  // ===== Render & Notify =====
+  /* ---------------- RENDER & NOTIFY ---------------- */
   renderOrderSuccess(order: any, tplContent: string) {
     const map: Record<string, string> = {
       '{{code}}': String(order.code ?? order.id),
@@ -101,9 +136,12 @@ export class TelegramService {
     if (!recs.length) return;
     const tpl = await this.getTemplate('ORDER_SUCCESS');
     const text = this.renderOrderSuccess(order, tpl.content);
-
     for (const r of recs) {
-      try { await this.sendText(String(r.chat_id), text); } catch {}
+      try {
+        await this.sendText(String(r.chat_id), text);
+      } catch {
+        // ignore lỗi từng người nhận
+      }
     }
   }
 }

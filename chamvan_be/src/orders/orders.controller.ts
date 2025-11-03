@@ -96,30 +96,33 @@ export class OrdersPublicController {
     return this.orders.create(dto, userId);
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Get('my')
-  // async myOrders(@Req() req: any) {
-  //   const userId = Number(req.user.id);
-  //   return this.orders.findMine(userId);
-  // }
 
 
+//  @UseGuards(JwtAuthGuard)
+//   @Get('my')
+//   async myOrders(@Req() req: any) {
+//     if (process.env.AUTH_DEBUG === '1') {
+//       console.log('[ORDERS] /orders/my req.user =', req?.user);
+//     }
+//     const userId = Number(req?.user?.id);
+//     if (!Number.isInteger(userId)) {
+//       throw new BadRequestException('Invalid user');
+//     }
+//     return this.orders.findMine(userId);
+//   }
 
 
- @UseGuards(JwtAuthGuard)
-  @Get('my')
-  async myOrders(@Req() req: any) {
-    if (process.env.AUTH_DEBUG === '1') {
-      console.log('[ORDERS] /orders/my req.user =', req?.user);
-    }
-    const userId = Number(req?.user?.id);
-    if (!Number.isInteger(userId)) {
-      throw new BadRequestException('Invalid user');
-    }
-    return this.orders.findMine(userId);
+@UseGuards(JwtAuthGuard)
+@Get('my')
+async myOrders(@Req() req: any) {
+  if (process.env.AUTH_DEBUG === '1') {
+    console.log('[ORDERS] /orders/my req.user =', req?.user);
   }
+  const userId = req?.user?.id as string;   // UUID string từ JWT
+  if (!userId) throw new BadRequestException('Invalid user');
 
-
+  return this.orders.findMine(userId);      // truyền string
+}
 
 
 

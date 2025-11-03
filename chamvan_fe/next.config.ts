@@ -15,7 +15,7 @@ const nextConfig = {
 
       // Unsplash
       { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
-
+{ protocol: 'https', hostname: 'noithatdangkhoa.com' },
       // Facebook CDN – dùng wildcard hợp lệ: *.fbcdn.net (bao phủ scontent-*.fbcdn.net, …)
       { protocol: 'https', hostname: '*.fbcdn.net', pathname: '/**' },
       // (Nếu cần chi tiết mạng con fna)

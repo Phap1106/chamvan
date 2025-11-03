@@ -23,18 +23,18 @@ __decorate([
     __metadata("design:type", Number)
 ], TelegramConfig.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ type: 'varchar', length: 128, nullable: true }),
+    __metadata("design:type", Object)
 ], TelegramConfig.prototype, "bot_token", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], TelegramConfig.prototype, "created_at", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)(),
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
     __metadata("design:type", Date)
 ], TelegramConfig.prototype, "updated_at", void 0);
 exports.TelegramConfig = TelegramConfig = __decorate([
-    (0, typeorm_1.Entity)({ name: 'telegram_config' })
+    (0, typeorm_1.Entity)('telegram_config')
 ], TelegramConfig);
 //# sourceMappingURL=telegram-config.entity.js.map

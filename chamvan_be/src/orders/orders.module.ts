@@ -8,6 +8,8 @@ import { OrdersService } from './orders.service';
 import { OrdersPublicController, OrdersAdminController } from './orders.controller';
 import { ZaloModule } from 'src/integrations/zalo/zalo.module'; // hoặc đường dẫn tương đối đúng dự án của bạn
 import { TelegramModule } from '../integrations/telegram/telegram.module';
+import { User } from '../users/user.entity';
+
 // @Module({
 //   imports: [TypeOrmModule.forFeature([Order, OrderItem, Product])],
 //   ZaloModule,
@@ -20,11 +22,12 @@ import { TelegramModule } from '../integrations/telegram/telegram.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, Product]),
+    TypeOrmModule.forFeature([Order, OrderItem, Product,User]),
     ZaloModule,
     TelegramModule // ADD ✅
   ],
   controllers: [OrdersPublicController, OrdersAdminController],
   providers: [OrdersService],
+    exports: [TypeOrmModule],
 })
 export class OrdersModule {}
