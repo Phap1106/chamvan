@@ -10,6 +10,10 @@ const product_color_entity_1 = require("../products/product-color.entity");
 const product_spec_entity_1 = require("../products/product-spec.entity");
 const order_entity_1 = require("../orders/order.entity");
 const order_item_entity_1 = require("../orders/order-item.entity");
+const telegram_config_entity_1 = require("../integrations/telegram/entities/telegram-config.entity");
+const telegram_recipient_entity_1 = require("../integrations/telegram/entities/telegram-recipient.entity");
+const telegram_template_entity_1 = require("../integrations/telegram/entities/telegram-template.entity");
+const bug_report_entity_1 = require("../reports/bug-report.entity");
 require("dotenv/config");
 exports.ormOpts = {
     type: 'mysql',
@@ -18,7 +22,20 @@ exports.ormOpts = {
     username: process.env.DB_USERNAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    entities: [user_entity_1.User, category_entity_1.Category, product_entity_1.Product, product_image_entity_1.ProductImage, product_color_entity_1.ProductColor, product_spec_entity_1.ProductSpec, order_entity_1.Order, order_item_entity_1.OrderItem],
+    entities: [
+        user_entity_1.User,
+        category_entity_1.Category,
+        product_entity_1.Product,
+        product_image_entity_1.ProductImage,
+        product_color_entity_1.ProductColor,
+        product_spec_entity_1.ProductSpec,
+        order_entity_1.Order,
+        order_item_entity_1.OrderItem,
+        telegram_config_entity_1.TelegramConfig,
+        telegram_recipient_entity_1.TelegramRecipient,
+        telegram_template_entity_1.TelegramTemplate,
+        bug_report_entity_1.BugReport,
+    ],
     synchronize: false,
     logging: false,
     charset: 'utf8mb4',

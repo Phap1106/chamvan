@@ -1,3 +1,4 @@
+// chamvan_be/src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -9,6 +10,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { TelegramModule } from './integrations/telegram/telegram.module';
+import { ReportsModule } from './reports/reports.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -18,7 +20,8 @@ import { TelegramModule } from './integrations/telegram/telegram.module';
     CategoriesModule,
     ProductsModule,
     OrdersModule,
-        TelegramModule, 
+    TelegramModule, 
+        ReportsModule,
   ],
   
 }

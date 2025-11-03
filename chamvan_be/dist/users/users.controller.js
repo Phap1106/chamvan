@@ -22,6 +22,7 @@ const list_users_dto_1 = require("./dto/list-users.dto");
 const jwt_guard_1 = require("../auth/jwt.guard");
 const roles_decorator_1 = require("../common/roles.decorator");
 const roles_guard_1 = require("../common/roles.guard");
+const change_password_dto_1 = require("./dto/change-password.dto");
 const role_enum_1 = require("../common/role.enum");
 let UsersController = class UsersController {
     users;
@@ -51,6 +52,9 @@ let UsersController = class UsersController {
     }
     remove(id) {
         return this.users.remove(id);
+    }
+    changeMyPassword(req, dto) {
+        return this.users.changePassword(req.user.id, dto);
     }
 };
 exports.UsersController = UsersController;
@@ -125,6 +129,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "remove", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('me/password'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, change_password_dto_1.ChangePasswordDto]),
+    __metadata("design:returntype", void 0)
+], UsersController.prototype, "changeMyPassword", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     __metadata("design:paramtypes", [users_service_1.UsersService])

@@ -117,7 +117,7 @@
 
 
 
-
+// chamvan_be/src/users/users.service.ts
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
@@ -126,6 +126,7 @@ import { User } from './user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ListUsersQueryDto } from './dto/list-users.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UsersService {
@@ -243,6 +244,42 @@ export class UsersService {
   async findById(id: string) {
     return this.assertExists(id);
   }
+
+    // --- helper: lấy user kèm password để so sánh
+  private async findWithPassword(id: string) {
+    const u = await this.repo.findOne({
+      where: { id },
+      select: ['id', 'password', 'tokenVersion'],
+    });
+    if (!u) throw new NotFoundException('User not found');
+    return u;
+  }
+
+  // --- đổi mật khẩu cho chính mình
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const u = await this.findWithPassword(userId);
+
+    const ok = await bcrypt.compare(dto.currentPassword, u.password || '');
+    if (!ok) {
+      throw new BadRequestException('Mật khẩu hiện tại không đúng');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(dto.newPassword, salt);
+
+    await this.repo.update(
+      { id: userId },
+      {
+        password: hashed,
+        tokenVersion: (u.tokenVersion || 0) + 1, // tăng version để vô hiệu hoá token cũ (nếu bạn kiểm tra ở Strategy)
+      },
+    );
+
+    return { success: true };
+  }
+
+
+
 }
 
 

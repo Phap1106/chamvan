@@ -11,6 +11,7 @@ import { ListUsersQueryDto } from './dto/list-users.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { Roles } from '../common/roles.decorator';
 import { RolesGuard } from '../common/roles.guard';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 
 import { Role } from '../common/role.enum';
@@ -71,4 +72,13 @@ export class UsersController {
   remove(@Param('id') id: string) {
     return this.users.remove(id);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/password')
+  changeMyPassword(@Req() req: any, @Body() dto: ChangePasswordDto) {
+    return this.users.changePassword(req.user.id, dto);
+  }
+
+
+
 }

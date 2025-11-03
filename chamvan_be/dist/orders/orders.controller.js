@@ -31,10 +31,9 @@ let OrdersPublicController = class OrdersPublicController {
         if (process.env.AUTH_DEBUG === '1') {
             console.log('[ORDERS] /orders/my req.user =', req?.user);
         }
-        const userId = Number(req?.user?.id);
-        if (!Number.isInteger(userId)) {
+        const userId = req?.user?.id;
+        if (!userId)
             throw new common_1.BadRequestException('Invalid user');
-        }
         return this.orders.findMine(userId);
     }
     findOne(id) {

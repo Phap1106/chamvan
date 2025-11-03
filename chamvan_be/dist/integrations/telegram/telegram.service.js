@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -16,6 +19,7 @@ exports.TelegramService = void 0;
 const common_1 = require("@nestjs/common");
 const axios_1 = __importDefault(require("axios"));
 const typeorm_1 = require("typeorm");
+const typeorm_2 = require("@nestjs/typeorm");
 const telegram_config_entity_1 = require("./entities/telegram-config.entity");
 const telegram_recipient_entity_1 = require("./entities/telegram-recipient.entity");
 const telegram_template_entity_1 = require("./entities/telegram-template.entity");
@@ -23,18 +27,26 @@ let TelegramService = class TelegramService {
     cfgRepo;
     recRepo;
     tplRepo;
-    constructor(ds) {
-        this.cfgRepo = ds.getRepository(telegram_config_entity_1.TelegramConfig);
-        this.recRepo = ds.getRepository(telegram_recipient_entity_1.TelegramRecipient);
-        this.tplRepo = ds.getRepository(telegram_template_entity_1.TelegramTemplate);
+    constructor(cfgRepo, recRepo, tplRepo) {
+        this.cfgRepo = cfgRepo;
+        this.recRepo = recRepo;
+        this.tplRepo = tplRepo;
     }
     async getToken() {
-        const cfg = await this.cfgRepo.findOne({ where: { id: 1 } });
+        let cfg = await this.cfgRepo.findOne({ where: { id: 1 } });
+        if (!cfg) {
+            const seed = {
+                id: 1,
+                bot_token: process.env.TELEGRAM_BOT_TOKEN || undefined,
+            };
+            cfg = this.cfgRepo.create(seed);
+            cfg = await this.cfgRepo.save(cfg);
+        }
         return cfg;
     }
     async updateToken(partial) {
         const existed = await this.getToken();
-        const merged = this.cfgRepo.merge(existed ?? this.cfgRepo.create({ id: 1 }), partial);
+        const merged = this.cfgRepo.merge(existed, partial);
         return this.cfgRepo.save(merged);
     }
     async token() {
@@ -44,30 +56,43 @@ let TelegramService = class TelegramService {
             throw new Error('Telegram bot token chưa được cấu hình!');
         return t;
     }
-    listRecipients() { return this.recRepo.find({ order: { created_at: 'DESC' } }); }
+    listRecipients() {
+        return this.recRepo.find({ order: { created_at: 'DESC' } });
+    }
     async upsertRecipient(dto) {
-        const existed = await this.recRepo.findOne({ where: { chat_id: String(dto.chat_id) } });
+        const chatId = String(dto.chat_id);
+        const existed = await this.recRepo.findOne({ where: { chat_id: chatId } });
         if (existed) {
             existed.display_name = dto.display_name ?? existed.display_name;
             if (typeof dto.is_active === 'boolean')
                 existed.is_active = dto.is_active;
             return this.recRepo.save(existed);
         }
-        return this.recRepo.save(this.recRepo.create({
-            chat_id: String(dto.chat_id),
+        const seed = {
+            chat_id: chatId,
             display_name: dto.display_name,
             is_active: dto.is_active ?? true,
-        }));
+        };
+        return this.recRepo.save(this.recRepo.create(seed));
     }
-    async removeRecipient(id) { await this.recRepo.delete(id); return { ok: true }; }
+    async removeRecipient(id) {
+        await this.recRepo.delete(id);
+        return { ok: true };
+    }
     async getTemplate(key) {
         let tpl = await this.tplRepo.findOne({ where: { key } });
-        if (!tpl)
-            tpl = await this.tplRepo.save(this.tplRepo.create({ key, content: '' }));
+        if (!tpl) {
+            const seed = {
+                key,
+                content: '🛒 ĐƠN HÀNG MỚI — CHỜ DUYỆT\n• Mã: {{code}}\n• Khách: {{customer}}\n• Tổng: {{total}}₫\n• Sản phẩm: {{items}}\n• Thời gian: {{time}}\n• Link: {{link}}',
+            };
+            tpl = await this.tplRepo.save(this.tplRepo.create(seed));
+        }
         return tpl;
     }
     setTemplate(key, content) {
-        return this.tplRepo.save(this.tplRepo.create({ key, content }));
+        const seed = { key, content };
+        return this.tplRepo.save(this.tplRepo.create(seed));
     }
     async api(path, body) {
         const token = await this.token();
@@ -76,7 +101,12 @@ let TelegramService = class TelegramService {
         return res.data;
     }
     async sendText(chat_id, text) {
-        return this.api('/sendMessage', { chat_id, text, parse_mode: 'HTML', disable_web_page_preview: true });
+        return this.api('/sendMessage', {
+            chat_id,
+            text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+        });
     }
     async getUpdates(offset) {
         const token = await this.token();
@@ -108,13 +138,19 @@ let TelegramService = class TelegramService {
             try {
                 await this.sendText(String(r.chat_id), text);
             }
-            catch { }
+            catch {
+            }
         }
     }
 };
 exports.TelegramService = TelegramService;
 exports.TelegramService = TelegramService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [typeorm_1.DataSource])
+    __param(0, (0, typeorm_2.InjectRepository)(telegram_config_entity_1.TelegramConfig)),
+    __param(1, (0, typeorm_2.InjectRepository)(telegram_recipient_entity_1.TelegramRecipient)),
+    __param(2, (0, typeorm_2.InjectRepository)(telegram_template_entity_1.TelegramTemplate)),
+    __metadata("design:paramtypes", [typeorm_1.Repository,
+        typeorm_1.Repository,
+        typeorm_1.Repository])
 ], TelegramService);
 //# sourceMappingURL=telegram.service.js.map
