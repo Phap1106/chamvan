@@ -23,6 +23,7 @@ const jwt_guard_1 = require("../auth/jwt.guard");
 const roles_decorator_1 = require("../common/roles.decorator");
 const roles_guard_1 = require("../common/roles.guard");
 const change_password_dto_1 = require("./dto/change-password.dto");
+const update_profile_dto_1 = require("./dto/update-profile.dto");
 const role_enum_1 = require("../common/role.enum");
 let UsersController = class UsersController {
     users;
@@ -35,7 +36,12 @@ let UsersController = class UsersController {
     adminCreate(dto) {
         return this.users.adminCreate(dto);
     }
-    me(req) { return req.user; }
+    async me(req) {
+        return this.users.findPublicById(req.user.id);
+    }
+    async updateMe(req, dto) {
+        return this.users.updateProfile(req.user.id, dto);
+    }
     list(q) {
         return this.users.findAll(q);
     }
@@ -80,8 +86,17 @@ __decorate([
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "me", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('me'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_profile_dto_1.UpdateProfileDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateMe", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.ADMIN, role_enum_1.Role.SUPPORT_ADMIN),

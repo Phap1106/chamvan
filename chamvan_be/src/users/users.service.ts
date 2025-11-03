@@ -1,10 +1,14 @@
+
+// // chamvan_be/src/users/users.service.ts
 // import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 // import { InjectRepository } from '@nestjs/typeorm';
 // import { Repository, ILike } from 'typeorm';
+// import * as bcrypt from 'bcryptjs';
 // import { User } from './user.entity';
 // import { CreateUserDto } from './dto/create-user.dto';
 // import { UpdateUserDto } from './dto/update-user.dto';
 // import { ListUsersQueryDto } from './dto/list-users.dto';
+// import { ChangePasswordDto } from './dto/change-password.dto';
 
 // @Injectable()
 // export class UsersService {
@@ -21,10 +25,18 @@
 //     return this.repo.count({ where: { role: 'admin' as any } });
 //   }
 
+//   private async hashPassword(plain: string) {
+//     const salt = await bcrypt.genSalt(10);
+//     return bcrypt.hash(plain, salt);
+//   }
+
 //   /* ---------- Public register ---------- */
 //   async registerCustomer(dto: CreateUserDto) {
 //     // Role luôn là user (bỏ qua mọi giá trị role nếu có)
 //     const user = this.repo.create({ ...dto, role: 'user' as any });
+//     if (user.password) {
+//       user.password = await this.hashPassword(user.password);
+//     }
 //     return this.repo.save(user);
 //   }
 
@@ -32,6 +44,9 @@
 //   async adminCreate(dto: CreateUserDto & { role?: 'support_admin' | 'admin' | 'user' }) {
 //     const role = dto.role ?? 'support_admin';
 //     const user = this.repo.create({ ...dto, role: role as any });
+//     if (user.password) {
+//       user.password = await this.hashPassword(user.password);
+//     }
 //     return this.repo.save(user);
 //   }
 
@@ -72,6 +87,9 @@
 //   /* ---------- Mutations ---------- */
 //   async updateProfile(id: string, dto: UpdateUserDto) {
 //     const u = await this.assertExists(id);
+//     if (dto.password) {
+//       dto.password = await this.hashPassword(dto.password);
+//     }
 //     this.repo.merge(u, dto);
 //     return this.repo.save(u);
 //   }
@@ -108,6 +126,42 @@
 //   async findById(id: string) {
 //     return this.assertExists(id);
 //   }
+
+//     // --- helper: lấy user kèm password để so sánh
+//   private async findWithPassword(id: string) {
+//     const u = await this.repo.findOne({
+//       where: { id },
+//       select: ['id', 'password', 'tokenVersion'],
+//     });
+//     if (!u) throw new NotFoundException('User not found');
+//     return u;
+//   }
+
+//   // --- đổi mật khẩu cho chính mình
+//   async changePassword(userId: string, dto: ChangePasswordDto) {
+//     const u = await this.findWithPassword(userId);
+
+//     const ok = await bcrypt.compare(dto.currentPassword, u.password || '');
+//     if (!ok) {
+//       throw new BadRequestException('Mật khẩu hiện tại không đúng');
+//     }
+
+//     const salt = await bcrypt.genSalt(10);
+//     const hashed = await bcrypt.hash(dto.newPassword, salt);
+
+//     await this.repo.update(
+//       { id: userId },
+//       {
+//         password: hashed,
+//         tokenVersion: (u.tokenVersion || 0) + 1, // tăng version để vô hiệu hoá token cũ (nếu bạn kiểm tra ở Strategy)
+//       },
+//     );
+
+//     return { success: true };
+//   }
+
+
+
 // }
 
 
@@ -245,7 +299,7 @@ export class UsersService {
     return this.assertExists(id);
   }
 
-    // --- helper: lấy user kèm password để so sánh
+  // --- helper: lấy user kèm password để so sánh
   private async findWithPassword(id: string) {
     const u = await this.repo.findOne({
       where: { id },
@@ -271,21 +325,10 @@ export class UsersService {
       { id: userId },
       {
         password: hashed,
-        tokenVersion: (u.tokenVersion || 0) + 1, // tăng version để vô hiệu hoá token cũ (nếu bạn kiểm tra ở Strategy)
+        tokenVersion: (u.tokenVersion || 0) + 1,
       },
     );
 
     return { success: true };
   }
-
-
-
 }
-
-
-
-
-
-
-
-
