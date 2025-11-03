@@ -14,12 +14,18 @@ const order_item_entity_1 = require("./order-item.entity");
 const product_entity_1 = require("../products/product.entity");
 const orders_service_1 = require("./orders.service");
 const orders_controller_1 = require("./orders.controller");
+const zalo_module_1 = require("../integrations/zalo/zalo.module");
+const telegram_module_1 = require("../integrations/telegram/telegram.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
 exports.OrdersModule = OrdersModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([order_entity_1.Order, order_item_entity_1.OrderItem, product_entity_1.Product])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([order_entity_1.Order, order_item_entity_1.OrderItem, product_entity_1.Product]),
+            zalo_module_1.ZaloModule,
+            telegram_module_1.TelegramModule
+        ],
         controllers: [orders_controller_1.OrdersPublicController, orders_controller_1.OrdersAdminController],
         providers: [orders_service_1.OrdersService],
     })

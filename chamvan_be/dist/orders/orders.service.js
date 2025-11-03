@@ -19,14 +19,20 @@ const typeorm_2 = require("typeorm");
 const order_entity_1 = require("./order.entity");
 const order_item_entity_1 = require("./order-item.entity");
 const product_entity_1 = require("../products/product.entity");
+const zalo_service_1 = require("../integrations/zalo/zalo.service");
+const telegram_service_1 = require("../integrations/telegram/telegram.service");
 let OrdersService = class OrdersService {
     orderRepo;
     itemRepo;
     productRepo;
-    constructor(orderRepo, itemRepo, productRepo) {
+    zalo;
+    telegram;
+    constructor(orderRepo, itemRepo, productRepo, zalo, telegram) {
         this.orderRepo = orderRepo;
         this.itemRepo = itemRepo;
         this.productRepo = productRepo;
+        this.zalo = zalo;
+        this.telegram = telegram;
     }
     async create(dto, userId) {
         const ids = dto.items.map((i) => Number(i.productId)).filter((x) => Number.isInteger(x));
@@ -59,7 +65,12 @@ let OrdersService = class OrdersService {
         const items = itemsData.map((d) => this.itemRepo.create({ ...d, order: saved }));
         await this.itemRepo.save(items);
         const withNames = items.map((i) => ({ ...i, name: nameMap.get(i.productId) }));
-        return { ...saved, items: withNames };
+        const result = { ...saved, items: withNames };
+        try {
+            await this.notifyAdminsOrderCreatedSafe(result);
+        }
+        catch { }
+        return result;
     }
     async findOne(id) {
         if (!Number.isInteger(id))
@@ -133,6 +144,47 @@ let OrdersService = class OrdersService {
         await this.orderRepo.save(order);
         return order;
     }
+    isSuccessStatus(status) {
+        if (!status)
+            return false;
+        const ok = ['paid', 'success', 'confirmed', 'completed'];
+        return ok.includes(String(status).toLowerCase());
+    }
+    async enrichOrderForNotify(orderId) {
+        const order = await this.orderRepo.findOne({
+            where: { id: orderId },
+            relations: ['items'],
+        });
+        if (!order)
+            throw new Error('Order not found');
+        const needNames = order.items.some((i) => !i.name);
+        if (needNames) {
+            const ids = order.items
+                .map((i) => Number(i.productId))
+                .filter((x) => Number.isInteger(x));
+            if (ids.length) {
+                const prods = await this.productRepo.find({ where: { id: (0, typeorm_2.In)(ids) } });
+                const nameMap = new Map(prods.map((p) => [p.id, p.name ?? `SP #${p.id}`]));
+                order.items = order.items.map((i) => ({
+                    ...i,
+                    name: i.name ?? nameMap.get(i.productId) ?? `SP #${i.productId}`,
+                }));
+            }
+        }
+        return {
+            ...order,
+            code: order.code ?? order.id,
+            paidAt: order.paidAt ?? undefined,
+            user: order.user ?? null,
+        };
+    }
+    async notifyAdminsOrderCreatedSafe(orderLike) {
+        const hasAllNames = Array.isArray(orderLike?.items) && orderLike.items.every((i) => !!i?.name);
+        const payload = (!hasAllNames || !orderLike?.id)
+            ? await this.enrichOrderForNotify(orderLike.id)
+            : orderLike;
+        return this.telegram.notifyAdminsOrderSuccess(payload);
+    }
 };
 exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([
@@ -142,6 +194,8 @@ exports.OrdersService = OrdersService = __decorate([
     __param(2, (0, typeorm_1.InjectRepository)(product_entity_1.Product)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        zalo_service_1.ZaloService,
+        telegram_service_1.TelegramService])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

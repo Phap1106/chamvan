@@ -8,7 +8,10 @@
 
 
 import Image from "next/image";
-
+import n3 from '@/app/img/cccv/cccv10.jpg';
+import n4 from '@/app/img/cccv/cccv4.jpg';
+import n5 from '@/app/img/cccv/cccv5.jpg';
+import n6 from '@/app/img/cccv/cccv9.jpg';
 export default function StoryPage() {
   return (
     <main className="bg-white text-neutral-800">
@@ -57,8 +60,7 @@ export default function StoryPage() {
 
           <div className="relative aspect-[16/10] w-full">
             <Image
-              src="https://scontent.fhan19-1.fna.fbcdn.net/v/t39.30808-6/548323314_122195831018284018_793362289614377921_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=106&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeG7j62efcKqsqPHYTnYOhVwsvQ0kfWmYRCy9DSR9aZhEGg1ir6pfsAYUuSBBdMoL-acFGOZ5UHNegAApGslo08i&_nc_ohc=IRZvBSb3rasQ7kNvwEtvYBj&_nc_oc=Adn_OgDRsq4_3hPVVnexdHs7EHVvA38IM_rTJwaRUojf2O9ewZt356ptV1-KzDykKWloTvP88pdKKfiwBBbZ_g-5&_nc_zt=23&_nc_ht=scontent.fhan19-1.fna&_nc_gid=OQWvvvf3yDlmLJUDcFmUGQ&oh=00_AfcVXYNzREkAhrQccfertvoFTNyIEpIxrlKnoMPFp9Dtcg&oe=68F1A885"
-              alt="Quy trình hoàn thiện sơn mài"
+              src={n6}
               fill
               className="object-cover rounded-md"
             />
@@ -69,8 +71,7 @@ export default function StoryPage() {
         <div className="grid grid-cols-1 gap-8 mt-10 md:mt-12 md:grid-cols-2 md:gap-10 lg:gap-12">
           <div className="relative order-1 md:order-none aspect-[16/12]">
             <Image
-              src="https://scontent.fhan19-1.fna.fbcdn.net/v/t39.30808-6/536269792_122192325674284018_8380023754092190133_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeH5hkb8KJDmWIYOHLofu_IMs5PiT7wc-NOzk-JPvBz405uihC4mCMsjWaIM63hYNaLhcDsdMQFCUnOHx8OHP-_h&_nc_ohc=UBqdx-CW09IQ7kNvwHJMO8O&_nc_oc=AdkbtH_LBAYCeHIV9-qrBg4PK0LsjeFZMcRMn_EFy-_VDfiiuLy88CrtTB8TITMSQ02xPUoj5AXQcfbKJs6dhU7v&_nc_zt=23&_nc_ht=scontent.fhan19-1.fna&_nc_gid=23fZlhLwjoAxmOE9bq541Q&oh=00_Affmyp8GB-j4zkJAytA6cQmMlg2sUnD8gDfFejiyPm1ayA&oe=68F1B47F"
-              alt="Nghệ nhân khảm - Chạm Vân"
+             src={n5}
               fill
               className="object-cover rounded-md"
             />
@@ -95,8 +96,7 @@ export default function StoryPage() {
         <div className="mt-12 sm:mt-14 lg:mt-16">
           <div className="relative aspect-[21/9] w-full overflow-hidden rounded-md">
             <Image
-              src="https://scontent.fhan19-1.fna.fbcdn.net/v/t39.30808-6/549691555_122196904094284018_6215630067626396280_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=127cfc&_nc_eui2=AeGAgYFmzvXxxls7Nh62quYqXMB9OVJK5otcwH05Ukrmi8iMGAO8eBH8nLUhge3r9V_CSBudW2ppOAH-17vSHlH8&_nc_ohc=Qrb_QaeKx1gQ7kNvwHeIlik&_nc_oc=AdlRFKG7Hha8EVxKQ82IkSMRM2BUfVKM5AeVeGS_kPJIWkQ7YnKS2RVcPDm85NDqLQJjiJg1ADJ0vNVIyDh0_5-A&_nc_zt=23&_nc_ht=scontent.fhan19-1.fna&_nc_gid=27kXlY57533BOuI9HnLsHw&oh=00_AfeyUa638lS5rlUIpBi8EpPl3J21PHzendmdADkm0EA7yA&oe=68F1B08F"
-              alt="Xưởng Chạm Vân"
+             src={n4}
               fill
               className="object-cover"
             />
@@ -122,8 +122,7 @@ export default function StoryPage() {
 
           <div className="relative aspect-[16/12]">
             <Image
-              src="https://scontent.fhan19-1.fna.fbcdn.net/v/t39.30808-6/529297627_122190564644284018_8321851820315081125_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=102&ccb=1-7&_nc_sid=833d8c&_nc_eui2=AeEhsTIvgZYpdKFkN3dA0Vtv9QNU-FS45Mv1A1T4VLjkyy4VSGtGQS0neWmf5Aue51uC1XrNwmhEhKWsab26W5rn&_nc_ohc=P-qqW-N-MgoQ7kNvwE4QKFc&_nc_oc=AdnqoVfqDAznDwcTHhNCIJeX3rLuYsGjO7amyEtXJx7WWQKa3zM_oIJfaexUmPSGs1s5E25T2hWaznc7b6lo5bcF&_nc_zt=23&_nc_ht=scontent.fhan19-1.fna&_nc_gid=UdaT9wFX8Z7hbsodAdtWvg&oh=00_Afeg4XYrdZl5d7i0X6egD0gpP-XlpcWqTMamfvpUvCKCqg&oe=68F1BB6D"
-              alt="Bộ sưu tập sản phẩm Chạm Vân"
+             src={n3}
               fill
               className="object-cover rounded-md"
             />
