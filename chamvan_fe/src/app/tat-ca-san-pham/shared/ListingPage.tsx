@@ -1,10 +1,9 @@
-
 // src/app/tat-ca-san-pham/ListingPage.tsx
 'use client';
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Pagination from '@/components/Pagination';
 import ProductHover, { Product as HoverProduct } from '@/components/ProductHover';
 import { getJSON } from '@/lib/api';
@@ -38,15 +37,18 @@ type BEProduct = {
   slug?: string | null;
   price: number | string;
   image?: string | null;
-  images?: string[]; // optional
-  colors?: BEColor[]; // optional
-  // các trường khác BE có cũng không ảnh hưởng mapping
+  images?: string[];
+  colors?: BEColor[];
 };
 type ListResp<T> = {
   items: T[];
   total: number;
   page?: number;
   limit?: number;
+};
+
+type ListingPageProps = {
+  initialCategory?: string;
 };
 
 /* ================== SORT DROPDOWN ================== */
@@ -102,12 +104,8 @@ function SortMenu({
   );
 }
 
-/* ================== TRANG LISTING ================== */
-export default function ListingPage({
-  initialCategory,
-}: {
-  initialCategory?: string;
-}) {
+/* ================== Inner Listing ================== */
+function ListingPageInner({ initialCategory }: ListingPageProps) {
   const router = useRouter();
   const sp = useSearchParams();
 
@@ -149,7 +147,7 @@ export default function ListingPage({
 
         // Map về dạng ProductHover
         const mapped: HoverProduct[] = arr.map((p) => ({
-          id: String(p.id), // ép string để khớp prop
+          id: String(p.id),
           name: p.name,
           price: Number(p.price) || 0,
           image: p.image || (Array.isArray(p.images) && p.images[0]) || '',
@@ -160,7 +158,6 @@ export default function ListingPage({
         setTotal(totalVal);
       })
       .catch((e: any) => {
-        // Nếu host BE trả HTML (sai host), tránh lỗi “Unexpected token '<'...”
         setError(e?.message || 'Lỗi tải dữ liệu');
       })
       .finally(() => setLoading(false));
@@ -197,7 +194,12 @@ export default function ListingPage({
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: 'https://your-domain.com/' },
-        { '@type': 'ListItem', position: 2, name: 'Tất cả sản phẩm', item: 'https://your-domain.com/tat-ca-san-pham' },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Tất cả sản phẩm',
+          item: 'https://your-domain.com/tat-ca-san-pham',
+        },
         ...(activeCategory
           ? [
               {
@@ -320,5 +322,20 @@ export default function ListingPage({
         />
       </div>
     </div>
+  );
+}
+
+/* ================== Wrapper với Suspense ================== */
+export default function ListingPage(props: ListingPageProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="px-4 py-8 mx-auto max-w-7xl text-sm text-neutral-600">
+          Đang tải sản phẩm…
+        </div>
+      }
+    >
+      <ListingPageInner {...props} />
+    </Suspense>
   );
 }
