@@ -19,13 +19,13 @@ export const metadata: Metadata = {
 
 const CONTACT = {
   email: "chamvan@gmail.com",
-  hotline: "0981 234 567", // TODO: thay bằng số thật
+  hotline: "0933 415 331", // TODO: thay bằng số thật
   zalo: "https://zalo.me/0000000000", // TODO: thay link Zalo Official / cá nhân
-  facebook: "https://facebook.com/yourpage", // TODO: thay link fanpage
+  facebook: "https://www.facebook.com/profile.php?id=61558520552168", // TODO: thay link fanpage
   showroom: {
-    name: "Showroom Chạm Vân",
-    address: "Số 123, Đường ABC, Quận XYZ, TP. HCM", // TODO: thay địa chỉ
-    hours: "Thứ 2 – CN: 9:00 – 20:00",
+    name: "Chạm Vân",
+    address: "Số 12, đường Xóm Miễu, Thôn Duyên Trường, Xã Duyên Thái, Huyện Thường Tín, Thành phố Hà Nội, Việt Nam",
+    hours: "Thứ 2 – CN: 8:00 – 20:00",
   },
 };
 
@@ -200,7 +200,7 @@ export default function LienHePage() {
             {/* Promo block */}
             <div className="p-5 mt-6 border border-dashed rounded-2xl border-zinc-200">
               <p className="text-sm font-medium text-zinc-900">
-                Hẹn lịch xem mẫu tại showroom
+                Hẹn lịch xem mẫu tại xưởng
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
                 Để chuẩn bị tốt nhất, bạn có thể nhắn trước sản phẩm quan tâm

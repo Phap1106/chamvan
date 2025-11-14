@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ormOpts = void 0;
 const typeorm_1 = require("typeorm");
+const return_request_entity_1 = require("../returns/return-request.entity");
 const user_entity_1 = require("../users/user.entity");
 const category_entity_1 = require("../categories/category.entity");
 const product_entity_1 = require("../products/product.entity");
@@ -35,6 +36,7 @@ exports.ormOpts = {
         telegram_recipient_entity_1.TelegramRecipient,
         telegram_template_entity_1.TelegramTemplate,
         bug_report_entity_1.BugReport,
+        return_request_entity_1.ReturnRequest,
     ],
     synchronize: false,
     logging: false,

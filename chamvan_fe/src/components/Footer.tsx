@@ -202,7 +202,7 @@ const supportLinks: NavItem[] = [
   { href: '/lien-he', label: 'Liên hệ' },
   { href: '/huong-dan-bao-quan', label: 'Hướng dẫn bảo quản' },
   { href: '/bao-hanh', label: 'Chính sách bảo hành' },
-  { href: '/giao-hang', label: 'Chính sách giao hàng' },
+  { href: '/chinh-sach-giao-hang', label: 'Chính sách giao hàng' },
   { href: '/faqs', label: 'FAQs' },
 ];
 
@@ -292,10 +292,10 @@ export default function Footer() {
             </h2>
             <div className="mt-4 space-y-2 text-sm leading-6 text-neutral-600">
               <p>Công ty TNHH Chạm Vân</p>
-              <p>Trụ sở: Tầng 6, Số nhà 21, Ngõ 2 Lê Văn Hưu, Quận Hai Bà Trưng, Hà Nội</p>
-              <p>MST: 0108062837</p>
-              <p>Hotline: 0900 000 000</p>
-              <p>Email: hello@chamvan.vn</p>
+              <p>Trụ sở: Số 12, đường Xóm Miễu, Thôn Duyên Trường, Xã Duyên Thái, Huyện Thường Tín, Thành phố Hà Nội, Việt Nam</p>
+              <p>MST: 0110891704</p>
+              <p>Hotline: 0933 415 331</p>
+              <p>Email: chamvan@gmail.com</p>
             </div>
           </div>
 
