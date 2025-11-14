@@ -1,64 +1,6 @@
-// // src/config/typeorm.config.ts
-// import { DataSource, DataSourceOptions } from 'typeorm';
-
-// import { User } from '../users/user.entity';
-// import { Category } from '../categories/category.entity';
-// import { Product } from '../products/product.entity';
-// import { ProductImage } from '../products/product-image.entity';
-// import { ProductColor } from '../products/product-color.entity';
-// import { ProductSpec } from '../products/product-spec.entity';
-// import { Order } from '../orders/order.entity';
-// import { OrderItem } from '../orders/order-item.entity';
-
-// // ✅ THÊM 3 ENTITY TELEGRAM
-// import { TelegramConfig } from '../integrations/telegram/entities/telegram-config.entity';
-// import { TelegramRecipient } from '../integrations/telegram/entities/telegram-recipient.entity';
-// import { TelegramTemplate } from '../integrations/telegram/entities/telegram-template.entity';
-
-// import 'dotenv/config';
-
-// export const ormOpts: DataSourceOptions = {
-//   type: 'mysql',
-//   host: process.env.DB_HOST,
-//   port: Number(process.env.DB_PORT || 3306),
-//   username: process.env.DB_USERNAME,
-//   password: process.env.DB_PASSWORD,
-//   database: process.env.DB_NAME,
-
-//   // ✅ BỔ SUNG 3 ENTITY VÀO ĐÂY
-//   entities: [
-//     User,
-//     Category,
-//     Product,
-//     ProductImage,
-//     ProductColor,
-//     ProductSpec,
-//     Order,
-//     OrderItem,
-//     TelegramConfig,
-//     TelegramRecipient,
-//     TelegramTemplate,
-//   ],
-
-//   synchronize: false,           // giữ nguyên
-//   logging: false,
-//   charset: 'utf8mb4',
-//   timezone: 'Z',
-// };
-
-// // DataSource cho seed
-// const ds = new DataSource(ormOpts);
-// console.log('ENV:', process.env.DB_HOST, process.env.DB_USERNAME, process.env.DB_NAME);
-// export default ds;
-
-
-
-
-
-
 // src/config/typeorm.config.ts
 import { DataSource, DataSourceOptions } from 'typeorm';
-
+import { ReturnRequest } from '../returns/return-request.entity';
 import { User } from '../users/user.entity';
 import { Category } from '../categories/category.entity';
 import { Product } from '../products/product.entity';
@@ -100,6 +42,7 @@ export const ormOpts: DataSourceOptions = {
     TelegramRecipient,
     TelegramTemplate,
     BugReport, // <— thêm dòng này
+    ReturnRequest,
   ],
 
   synchronize: false,
