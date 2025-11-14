@@ -1,12 +1,12 @@
 // src/app/qua-tang/_ListingQT.tsx
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import Pagination from "@/components/Pagination";
-import ProductHover, { Product as UIProductCard } from "@/components/ProductHover";
-import { getJSON } from "@/lib/api";
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import Pagination from '@/components/Pagination';
+import ProductHover, { Product as UIProductCard } from '@/components/ProductHover';
+import { getJSON } from '@/lib/api';
 
 /* ===== Types từ BE ===== */
 type BECategory = { id: number; name: string; slug: string };
@@ -26,7 +26,7 @@ type BEProduct = {
 /* ===== Utils ===== */
 function normalizeImage(
   list: Array<string | BEImage> | null | undefined,
-  fallback?: string | null
+  fallback?: string | null,
 ) {
   const raw: Array<string | BEImage> = [
     ...(fallback ? [fallback] : []),
@@ -34,15 +34,15 @@ function normalizeImage(
   ];
   const urls = raw
     .map((it) => {
-      if (typeof it === "string") return it.trim();
-      if (it && typeof it === "object") {
+      if (typeof it === 'string') return it.trim();
+      if (it && typeof it === 'object') {
         const anyIt = it as Record<string, unknown>;
-        return ((anyIt.url as string) ?? (anyIt.src as string) ?? (anyIt.path as string) ?? "").trim();
+        return ((anyIt.url as string) ?? (anyIt.src as string) ?? (anyIt.path as string) ?? '').trim();
       }
-      return "";
+      return '';
     })
     .filter(Boolean);
-  return urls.find((u) => /^https?:\/\//i.test(u)) ?? urls[0] ?? "";
+  return urls.find((u) => /^https?:\/\//i.test(u)) ?? urls[0] ?? '';
 }
 
 function normalizeColors(list: BEColor[] | null | undefined) {
@@ -51,14 +51,14 @@ function normalizeColors(list: BEColor[] | null | undefined) {
 }
 
 function formatCurrency(v: number) {
-  return v.toLocaleString("vi-VN") + " ₫";
+  return v.toLocaleString('vi-VN') + ' ₫';
 }
 
 const SORTS = [
-  { key: "relevance", label: "Liên quan nhất" },
-  { key: "newest", label: "Mới nhất" },
-  { key: "price-asc", label: "Giá từ thấp đến cao" },
-  { key: "price-desc", label: "Giá từ cao xuống thấp" },
+  { key: 'relevance', label: 'Liên quan nhất' },
+  { key: 'newest', label: 'Mới nhất' },
+  { key: 'price-asc', label: 'Giá từ thấp đến cao' },
+  { key: 'price-desc', label: 'Giá từ cao xuống thấp' },
 ];
 
 function SortMenu({
@@ -92,7 +92,7 @@ function SortMenu({
             <li key={s.key}>
               <button
                 className={`w-full rounded px-3 py-2 text-left text-sm hover:bg-neutral-100 ${
-                  s.key === value ? "font-medium text-neutral-900" : "text-neutral-700"
+                  s.key === value ? 'font-medium text-neutral-900' : 'text-neutral-700'
                 }`}
                 onClick={() => {
                   onChange(s.key);
@@ -111,18 +111,21 @@ function SortMenu({
   );
 }
 
-export default function ListingQuaTang() {
+/* ===== Inner component ===== */
+function ListingQuaTangInner() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  const pageParam = Math.max(1, Number(sp.get("page") || "1"));
-  const qParam = sp.get("q") || "";
-  const sortParam = sp.get("sort") || "relevance";
+  const pageParam = Math.max(1, Number(sp.get('page') || '1'));
+  const qParam = sp.get('q') || '';
+  const sortParam = sp.get('sort') || 'relevance';
 
   const [q, setQ] = useState(qParam);
   const [state, setState] = useState<
-    { status: "idle" | "loading" } | { status: "error"; message: string } | { status: "ok"; data: BEProduct[] }
-  >({ status: "idle" });
+    | { status: 'idle' | 'loading' }
+    | { status: 'error'; message: string }
+    | { status: 'ok'; data: BEProduct[] }
+  >({ status: 'idle' });
 
   const pageSize = 12;
 
@@ -131,13 +134,13 @@ export default function ListingQuaTang() {
     let alive = true;
     (async () => {
       try {
-        setState({ status: "loading" });
-        const data = await getJSON<BEProduct[]>("/products");
+        setState({ status: 'loading' });
+        const data = await getJSON<BEProduct[]>('/products');
         if (!alive) return;
-        setState({ status: "ok", data });
+        setState({ status: 'ok', data });
       } catch (e: any) {
         if (!alive) return;
-        setState({ status: "error", message: e?.message || "Fetch failed" });
+        setState({ status: 'error', message: e?.message || 'Fetch failed' });
       }
     })();
     return () => {
@@ -147,7 +150,7 @@ export default function ListingQuaTang() {
 
   // Lọc theo 'qua-tang' + search + sort + paginate
   const { products, total } = useMemo(() => {
-    if (state.status !== "ok") return { products: [] as UIProductCard[], total: 0 };
+    if (state.status !== 'ok') return { products: [] as UIProductCard[], total: 0 };
 
     const base = (state.data || []).map((p) => {
       const slugs = (p.categories ?? []).map((c) => c.slug);
@@ -155,7 +158,7 @@ export default function ListingQuaTang() {
       const colors = normalizeColors(p.colors);
       return {
         id: String(p.id),
-        name: p.name ?? "",
+        name: p.name ?? '',
         price: Number(p.price) || 0,
         image: img,
         colors,
@@ -164,17 +167,16 @@ export default function ListingQuaTang() {
       };
     });
 
-    // chỉ lấy sản phẩm có slug 'qua-tang' trong categories
-    let arr = base.filter((p) => p._slugs.includes("qua-tang"));
+    let arr = base.filter((p) => p._slugs.includes('qua-tang'));
 
     if (qParam) {
       const kw = qParam.trim().toLowerCase();
       arr = arr.filter((p) => p.name.toLowerCase().includes(kw));
     }
 
-    if (sortParam === "price-asc") arr.sort((a, b) => a.price - b.price);
-    if (sortParam === "price-desc") arr.sort((a, b) => b.price - a.price);
-    if (sortParam === "newest") {
+    if (sortParam === 'price-asc') arr.sort((a, b) => a.price - b.price);
+    if (sortParam === 'price-desc') arr.sort((a, b) => b.price - a.price);
+    if (sortParam === 'newest') {
       arr = arr
         .slice()
         .sort((a, b) => {
@@ -191,7 +193,7 @@ export default function ListingQuaTang() {
       name: p.name,
       price: p.price,
       image: p.image,
-      colors: p.colors, // luôn có mảng
+      colors: p.colors,
     }));
 
     return { products: pageItems, total: arr.length };
@@ -204,16 +206,16 @@ export default function ListingQuaTang() {
   function onSearch(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams(sp.toString());
-    if (q) params.set("q", q);
-    else params.delete("q");
-    params.set("page", "1");
+    if (q) params.set('q', q);
+    else params.delete('q');
+    params.set('page', '1');
     pushParams(params);
   }
 
   function onSortChange(k: string) {
     const params = new URLSearchParams(sp.toString());
-    params.set("sort", k);
-    params.set("page", "1");
+    params.set('sort', k);
+    params.set('page', '1');
     pushParams(params);
   }
 
@@ -232,7 +234,7 @@ export default function ListingQuaTang() {
 
       <h1 className="mb-1 text-3xl font-semibold tracking-wide text-center">QUÀ TẶNG</h1>
       <p className="mb-6 text-sm text-center text-neutral-500">
-        {state.status === "ok" ? total : "…"} sản phẩm phù hợp
+        {state.status === 'ok' ? total : '…'} sản phẩm phù hợp
       </p>
 
       {/* search + sort */}
@@ -258,7 +260,7 @@ export default function ListingQuaTang() {
       </div>
 
       {/* states */}
-      {state.status === "loading" && (
+      {state.status === 'loading' && (
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="rounded h-60 bg-neutral-100 animate-pulse" />
@@ -266,13 +268,13 @@ export default function ListingQuaTang() {
         </div>
       )}
 
-      {state.status === "error" && (
+      {state.status === 'error' && (
         <div className="p-10 text-center text-red-600 border border-dashed rounded-md">
           Lỗi tải sản phẩm: {state.message}
         </div>
       )}
 
-      {state.status === "ok" &&
+      {state.status === 'ok' &&
         (products.length === 0 ? (
           <div className="p-10 text-center border border-dashed rounded-md text-neutral-500">
             Không tìm thấy sản phẩm phù hợp.
@@ -291,7 +293,7 @@ export default function ListingQuaTang() {
         ))}
 
       {/* pagination */}
-      {state.status === "ok" && total > 0 && (
+      {state.status === 'ok' && total > 0 && (
         <div className="mt-10">
           <Pagination
             total={total}
@@ -299,12 +301,27 @@ export default function ListingQuaTang() {
             current={pageParam}
             makeLink={(page) => {
               const params = new URLSearchParams(sp.toString());
-              params.set("page", String(page));
+              params.set('page', String(page));
               return `/qua-tang?${params.toString()}`;
             }}
           />
         </div>
       )}
     </div>
+  );
+}
+
+/* ===== Wrapper với Suspense ===== */
+export default function ListingQuaTang() {
+  return (
+    <Suspense
+      fallback={
+        <div className="px-4 py-8 mx-auto max-w-7xl text-sm text-neutral-600">
+          Đang tải sản phẩm…
+        </div>
+      }
+    >
+      <ListingQuaTangInner />
+    </Suspense>
   );
 }
