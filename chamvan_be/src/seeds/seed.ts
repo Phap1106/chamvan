@@ -6,11 +6,11 @@ import * as bcrypt from 'bcryptjs';
 export async function seed(dataSource: DataSource) {
   const userRepo = dataSource.getRepository(User);
 
-  const adminEmail = 'admin@chamvan.local';
+  const adminEmail = 'chamvan@gmail.com';
   let admin = await userRepo.findOne({ where: { email: adminEmail } });
 
   if (!admin) {
-    const hash = await bcrypt.hash('admin123', 10);
+    const hash = await bcrypt.hash('Ch@mVan@2025', 10);
 
     const adminData: Partial<User> = {
       fullName: 'Admin',

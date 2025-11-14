@@ -3,7 +3,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
-
+import { seed } from './seeds/seed';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -36,6 +36,11 @@ async function bootstrap() {
     }
     next();
   });
+   if (process.env.SEED_ADMIN_ON_BOOT === '1') {
+    const dataSource = app.get(DataSource); // lấy DataSource do TypeORMModule tạo
+    await seed(dataSource);
+  }
+
 
   await app.listen(process.env.PORT || 4000);
 }

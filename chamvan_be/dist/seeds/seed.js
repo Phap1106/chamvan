@@ -38,10 +38,10 @@ const user_entity_1 = require("../users/user.entity");
 const bcrypt = __importStar(require("bcryptjs"));
 async function seed(dataSource) {
     const userRepo = dataSource.getRepository(user_entity_1.User);
-    const adminEmail = 'admin@chamvan.local';
+    const adminEmail = 'chamvan@gmail.com';
     let admin = await userRepo.findOne({ where: { email: adminEmail } });
     if (!admin) {
-        const hash = await bcrypt.hash('admin123', 10);
+        const hash = await bcrypt.hash('Ch@mVan@2025', 10);
         const adminData = {
             fullName: 'Admin',
             email: adminEmail,
