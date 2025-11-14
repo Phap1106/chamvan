@@ -9,11 +9,7 @@ import { FileText, Send, RefreshCw } from 'lucide-react';
 type ReturnStatus = 'pending' | 'in_review' | 'approved' | 'rejected' | 'refunded';
 
 type ReturnItem = {
-<<<<<<< HEAD
-  id: string;
-=======
-  id: number;          // <-- BE dùng INT
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
+  id: number; // BE dùng INT
   orderCode: string;
   reason: string;
   status: ReturnStatus;
@@ -23,41 +19,18 @@ type ReturnItem = {
 
 /* ================== Small fetch helper ================= */
 const BASE =
-<<<<<<< HEAD
   process.env.NEXT_PUBLIC_API_BASE?.replace(/\/+$/, '') || 'http://localhost:4000/api';
-
-async function http<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const res = await fetch(input, {
-    ...init,
-    // Quan trọng: FE của bạn đang dùng cookie JWT → credentials để BE đọc user
-    credentials: 'include',
-=======
-  (process.env.NEXT_PUBLIC_API_BASE
-    ? process.env.NEXT_PUBLIC_API_BASE.replace(/\/+$/, '')
-    : 'http://localhost:4000/api');
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path.startsWith('/') ? path : `/${path}`}`, {
     ...init,
     credentials: 'include', // JWT cookie
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
     headers: {
       'Content-Type': 'application/json',
       ...(init?.headers || {}),
     },
     cache: 'no-store',
   });
-<<<<<<< HEAD
-  if (!res.ok) {
-    let msg = 'Request failed';
-    try {
-      const j = await res.json();
-      msg = j?.message || msg;
-    } catch {}
-    throw new Error(msg);
-  }
-  return res.json() as Promise<T>;
-=======
 
   // Thử parse JSON (kể cả khi lỗi) để lấy message
   let data: any = null;
@@ -77,7 +50,6 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return (data ?? (await res.json())) as T;
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
 }
 
 /* ======================= Page ======================== */
@@ -103,11 +75,9 @@ export default function ReturnRequestPage() {
   async function loadMine() {
     try {
       setLoading(true);
-<<<<<<< HEAD
-      const payload = await http<{ data: ReturnItem[] }>(`${BASE}/return-requests/me`);
-=======
-      const payload = await http<{ statusCode: number; data: ReturnItem[] }>('/return-requests/me');
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
+      const payload = await http<{ statusCode: number; data: ReturnItem[] }>(
+        '/return-requests/me'
+      );
       setItems(Array.isArray(payload?.data) ? payload.data : []);
     } catch (e: any) {
       toast.error(e?.message || 'Không tải được danh sách yêu cầu');
@@ -119,17 +89,8 @@ export default function ReturnRequestPage() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-<<<<<<< HEAD
-      try {
-        if (!mounted) return;
-        await loadMine();
-      } finally {
-        // no-op
-      }
-=======
       if (!mounted) return;
       await loadMine();
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
     })();
     return () => {
       mounted = false;
@@ -139,22 +100,6 @@ export default function ReturnRequestPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-<<<<<<< HEAD
-    if (!orderCode.trim() || !reason.trim()) {
-      toast.error('Vui lòng nhập Mã đơn hàng và Nội dung đổi/trả');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await http(`${BASE}/return-requests`, {
-        method: 'POST',
-        body: JSON.stringify({
-          orderCode: orderCode.trim(),
-          reason: reason.trim(),
-        }),
-      });
-      toast.success('Đã gửi yêu cầu đổi/trả');
-=======
 
     const oc = orderCode.trim();
     const rs = reason.trim();
@@ -173,7 +118,6 @@ export default function ReturnRequestPage() {
       });
 
       toast.success('🎉 Đã gửi yêu cầu đổi/trả thành công');
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
       setOrderCode('');
       setReason('');
       await loadMine();
@@ -193,13 +137,8 @@ export default function ReturnRequestPage() {
         </h1>
 
         {/* ====== Form gửi yêu cầu ====== */}
-<<<<<<< HEAD
-        <form onSubmit={onSubmit} className="mb-10 rounded-xl border border-gray-200 bg-white">
-          <div className="px-5 md:px-6 py-5 md:py-6 space-y-4">
-=======
         <form onSubmit={onSubmit} className="mb-10 bg-white border border-gray-200 rounded-xl">
           <div className="px-5 py-5 space-y-4 md:px-6 md:py-6">
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
             {/* Mã đơn hàng */}
             <label className="block">
               <span className="flex items-center gap-2 mb-2 text-sm text-gray-600">
@@ -208,11 +147,7 @@ export default function ReturnRequestPage() {
               </span>
               <input
                 type="text"
-<<<<<<< HEAD
-                placeholder="VD: ORD-2025-0001"
-=======
                 placeholder="VD: 10062 hoặc ORD-2025-0001"
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
                 value={orderCode}
                 onChange={(e) => setOrderCode(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-black/70"
@@ -240,20 +175,12 @@ export default function ReturnRequestPage() {
                 disabled={submitting}
                 className="inline-flex items-center justify-center rounded-md bg-black px-5 py-2.5 text-white hover:opacity-90 disabled:opacity-60"
               >
-<<<<<<< HEAD
-                {submitting ? 'Đang gửi...' : 'Gửi yêu cầu'}
-=======
                 {submitting ? 'Đang gửi…' : 'Gửi yêu cầu'}
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
               </button>
               <button
                 type="button"
                 onClick={loadMine}
-<<<<<<< HEAD
-                className="inline-flex items-center gap-2 rounded-md border px-4 py-2 hover:bg-gray-50"
-=======
                 className="inline-flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50"
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
               >
                 <RefreshCw className="w-4 h-4" />
                 Làm mới
@@ -266,13 +193,8 @@ export default function ReturnRequestPage() {
         </form>
 
         {/* ====== Danh sách yêu cầu đã gửi ====== */}
-<<<<<<< HEAD
-        <div className="rounded-xl border border-gray-200 bg-white">
-          <div className="px-5 md:px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-=======
         <div className="bg-white border border-gray-200 rounded-xl">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 md:px-6">
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
             <h2 className="font-medium">Yêu cầu của tôi</h2>
             <button onClick={loadMine} className="text-sm underline underline-offset-4">
               Làm mới
@@ -281,15 +203,9 @@ export default function ReturnRequestPage() {
 
           {loading ? (
             <div className="p-6 space-y-3">
-<<<<<<< HEAD
-              <div className="h-4 w-40 bg-gray-100 rounded animate-pulse" />
-              <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
-              <div className="h-4 w-3/4 bg-gray-100 rounded animate-pulse" />
-=======
               <div className="w-40 h-4 bg-gray-100 rounded animate-pulse" />
               <div className="w-full h-4 bg-gray-100 rounded animate-pulse" />
               <div className="w-3/4 h-4 bg-gray-100 rounded animate-pulse" />
->>>>>>> 800465cd31dad544f71a41ef6ce59255ede6f0c6
             </div>
           ) : items.length === 0 ? (
             <div className="p-6 text-sm text-gray-500">Bạn chưa có yêu cầu nào.</div>
