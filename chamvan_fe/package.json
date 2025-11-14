@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@udecode/cn": "^49.0.15",
     "jspdf": "^3.0.3",
     "lucide-react": "^0.545.0",
     "next": "15.5.4",
