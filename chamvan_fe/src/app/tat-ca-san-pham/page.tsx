@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     title: "Tất cả sản phẩm | Chạm Vân",
     description:
       "Đồ gỗ giả cổ tinh tế cho không gian sống hiện đại. Dễ dùng, dễ phối, bền bỉ.",
-    url: "https://your-domain.com/tat-ca-san-pham",
+    url: "https://chamvan.com/tat-ca-san-pham",
     type: "website",
   },
 };

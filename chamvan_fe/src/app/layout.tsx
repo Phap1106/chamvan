@@ -23,7 +23,15 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Chạm Vân",
   description: "Website bán hàng đồ gỗ giả cổ Chạm Vân",
+  icons: {
+    icon: [
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
+    ],
+    shortcut: '/favicon.png',
+  },
 };
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
