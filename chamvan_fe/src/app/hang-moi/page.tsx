@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Hàng mới | Chạm Vân",
     description: "Bộ sưu tập sản phẩm mới nhất.",
-    url: "https://your-domain.com/hang-moi",
+    url: "https://chamvan.com/hang-moi",
     type: "website",
   },
 };

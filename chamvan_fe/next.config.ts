@@ -9,6 +9,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+      domains: ['api.chamvan.com', 'cdn.vntrip.vn', 'images.pexels.com'],
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       // Ảnh BE local (nếu có)
@@ -23,7 +24,7 @@ const nextConfig = {
 
       // Unsplash
       { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
-{ protocol: 'https', hostname: 'noithatdangkhoa.com' },
+      { protocol: 'https', hostname: 'noithatdangkhoa.com' },
       // Facebook CDN – dùng wildcard hợp lệ: *.fbcdn.net (bao phủ scontent-*.fbcdn.net, …)
       { protocol: 'https', hostname: '*.fbcdn.net', pathname: '/**' },
       // (Nếu cần chi tiết mạng con fna)

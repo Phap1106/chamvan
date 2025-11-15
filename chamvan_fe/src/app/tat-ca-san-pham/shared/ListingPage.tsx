@@ -166,7 +166,7 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
   // === Helpers push URL ===
   function pushParams(next: URLSearchParams, base?: string) {
     const href =
-      (base ?? (initialCategory ? `/tat-ca-san-pham/${initialCategory}` : '/tat-ca-san-pham')) +
+      (base ?? (initialCategory ? `/${initialCategory}` : '/tat-ca-san-pham')) +
       `?${next.toString()}`;
     router.push(href);
   }
@@ -247,7 +247,7 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
       <div className="flex flex-wrap items-center gap-2 mb-6 md:gap-3">
         {CATEGORIES.map((c) => {
           const isActive = (initialCategory ? initialCategory : '') === c.slug;
-          const href = c.slug ? `/tat-ca-san-pham/${c.slug}` : '/tat-ca-san-pham';
+          const href = c.slug ? `/${c.slug}` : '/tat-ca-san-pham';
           return (
             <Link
               key={c.slug}
@@ -316,7 +316,7 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
           makeLink={(page) => {
             const params = new URLSearchParams(sp.toString());
             params.set('page', String(page));
-            const base = initialCategory ? `/tat-ca-san-pham/${initialCategory}` : '/tat-ca-san-pham';
+            const base = initialCategory ? `/${initialCategory}` : '/tat-ca-san-pham';
             return `${base}?${params.toString()}`;
           }}
         />
@@ -330,7 +330,7 @@ export default function ListingPage(props: ListingPageProps) {
   return (
     <Suspense
       fallback={
-        <div className="px-4 py-8 mx-auto max-w-7xl text-sm text-neutral-600">
+        <div className="px-4 py-8 mx-auto text-sm max-w-7xl text-neutral-600">
           Đang tải sản phẩm…
         </div>
       }
