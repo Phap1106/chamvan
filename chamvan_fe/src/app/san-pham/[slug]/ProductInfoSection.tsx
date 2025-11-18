@@ -192,7 +192,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
       </div>
 
       <div className="flex items-center gap-4 mt-4 text-sm">
-        <ShareButton path={`/san-pham/${p.id}`} title={p.name} />
+        <ShareButton path={`/san-pham/$${(p as any).slug || p.id}`} title={p.name} />
         <WishlistButton productId={p.id} />
       </div>
 

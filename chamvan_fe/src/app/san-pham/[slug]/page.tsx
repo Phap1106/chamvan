@@ -1,3 +1,4 @@
+//src/app/san-pham/[slug]/page.tsx
 import Image from "next/image";
 import ProductInfoSection from "./ProductInfoSection";
 import ProductGallery from "@/components/ProductGallery";
@@ -7,6 +8,7 @@ import { notFound } from "next/navigation";
 export type UIProduct = {
   id: string;
   name: string;
+  slug?: string;
   price: number;
   image?: string;   // Ảnh đại diện (cho các component cũ)
   images: string[]; // Full danh sách ảnh (cho Gallery)
@@ -112,7 +114,8 @@ async function fetchSuggested(productId: string): Promise<UIProduct[]> {
             price: coerceNumber(item.price),
             image: imgs[0],
             images: imgs,
-            sku: item.sku
+            sku: item.sku,
+            slug: item.slug
          } as UIProduct;
       });
   } catch (err) {

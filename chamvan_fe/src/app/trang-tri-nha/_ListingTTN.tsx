@@ -353,7 +353,7 @@ function ListingTrangTriNhaInner({ initialCategory }: ListingTrangTriNhaProps) {
               <ProductHover
                 key={p.id}
                 product={p}
-                href={`/san-pham/${p.id}`}
+                href={`/san-pham/${(p as any).slug || p.id}`}
                 priceRenderer={formatCurrency}
               />
             ))}
