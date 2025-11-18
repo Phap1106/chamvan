@@ -193,12 +193,12 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: 'https://your-domain.com/' },
+        { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: 'https://chamvan.com/' },
         {
           '@type': 'ListItem',
           position: 2,
           name: 'Tất cả sản phẩm',
-          item: 'https://your-domain.com/tat-ca-san-pham',
+          item: 'https://chamvan.com/tat-ca-san-pham',
         },
         ...(activeCategory
           ? [
@@ -206,7 +206,7 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
                 '@type': 'ListItem',
                 position: 3,
                 name: CATEGORIES.find((c) => c.slug === activeCategory)?.label ?? 'Danh mục',
-                item: `https://your-domain.com/tat-ca-san-pham/${activeCategory}`,
+                item: `https://chamvan.com/tat-ca-san-pham/${activeCategory}`,
               },
             ]
           : []),
@@ -302,7 +302,7 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
       ) : (
         <div className="grid grid-cols-2 gap-5 md:grid-cols-3">
           {items.map((p) => (
-            <ProductHover key={p.id} product={p} href={`/san-pham/${p.id}`} priceRenderer={formatCurrency} />
+            <ProductHover key={p.id} product={p} href={`/san-pham/${(p as any).slug}`} priceRenderer={formatCurrency} />
           ))}
         </div>
       )}
