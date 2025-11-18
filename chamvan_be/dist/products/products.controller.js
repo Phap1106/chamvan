@@ -17,44 +17,35 @@ const common_1 = require("@nestjs/common");
 const products_service_1 = require("./products.service");
 const create_product_dto_1 = require("./dto/create-product.dto");
 let ProductsController = class ProductsController {
-    service;
-    constructor(service) {
-        this.service = service;
+    productsService;
+    constructor(productsService) {
+        this.productsService = productsService;
     }
-    findAll() {
-        return this.service.findAll();
+    create(createProductDto) {
+        return this.productsService.create(createProductDto);
     }
-    findOne(id) {
-        return this.service.findOne(id);
+    findAll(query) {
+        return this.productsService.findAll();
     }
-    create(dto) {
-        return this.service.create(dto);
+    findOne(term) {
+        const isId = !isNaN(Number(term));
+        if (isId) {
+            return this.productsService.findOne(+term);
+        }
+        return this.productsService.findBySlug(term);
     }
-    update(id, dto) {
-        return this.service.update(id, dto);
+    update(id, updateProductDto) {
+        return this.productsService.update(id, updateProductDto);
     }
     async remove(id) {
-        await this.service.remove(id);
+        await this.productsService.remove(id);
     }
     recommendations(id, limit) {
         const n = Math.min(24, Math.max(4, Number(limit) || 12));
-        return this.service.getRecommendations(id, n);
+        return this.productsService.getRecommendations(id, n);
     }
 };
 exports.ProductsController = ProductsController;
-__decorate([
-    (0, common_1.Get)(),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], ProductsController.prototype, "findAll", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number]),
-    __metadata("design:returntype", void 0)
-], ProductsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
@@ -62,6 +53,20 @@ __decorate([
     __metadata("design:paramtypes", [create_product_dto_1.CreateProductDto]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':term'),
+    __param(0, (0, common_1.Param)('term')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),

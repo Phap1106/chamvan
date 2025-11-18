@@ -32,11 +32,14 @@ export const metadata: Metadata = {
   },
 };
 
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" className={`${manrope.variable} ${playfair.variable}`}>
-      <body className="flex flex-col font-sans bg-white min-h-dvh text-neutral-900">
+      {/* 👇 Đã thêm suppressHydrationWarning={true} để fix lỗi extension */}
+      <body 
+        className="flex flex-col font-sans bg-white min-h-dvh text-neutral-900"
+        suppressHydrationWarning={true}
+      >
         {/* Toaster bọc ngoài cùng để mọi nơi có thể useToast() */}
         <Toaster>
           <RootProviders>

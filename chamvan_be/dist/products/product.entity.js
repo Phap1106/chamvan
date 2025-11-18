@@ -18,6 +18,7 @@ const category_entity_1 = require("../categories/category.entity");
 let Product = class Product {
     id;
     name;
+    slug;
     price;
     sku;
     description;
@@ -41,6 +42,10 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Product.prototype, "name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Product.prototype, "slug", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 12, scale: 2, default: 0 }),
     __metadata("design:type", String)

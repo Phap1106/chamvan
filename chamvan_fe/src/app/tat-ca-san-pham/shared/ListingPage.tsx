@@ -1,4 +1,3 @@
-// src/app/tat-ca-san-pham/ListingPage.tsx
 'use client';
 
 import Link from 'next/link';
@@ -29,19 +28,37 @@ function formatCurrency(v: number) {
   return (Number.isFinite(v) ? v : 0).toLocaleString('vi-VN') + ' ₫';
 }
 
-/* ================== TYPES (phía BE) ================== */
+/* ================== HELPER XỬ LÝ ẢNH (QUAN TRỌNG) ================== */
+function getProductImage(p: any): string {
+  // 1. Ưu tiên ảnh đại diện (cột image) nếu là chuỗi URL
+  if (p.image && typeof p.image === 'string' && p.image.startsWith('http')) {
+    return p.image;
+  }
+
+  // 2. Tìm trong mảng images
+  if (Array.isArray(p.images) && p.images.length > 0) {
+    const first = p.images[0];
+    if (typeof first === 'string') return first;
+    if (typeof first === 'object' && first.url) return first.url;
+  }
+
+  // 3. Fallback
+  return '/placeholder.jpg';
+}
+
+/* ================== TYPES ================== */
 type BEColor = { name: string; hex?: string | null };
 type BEProduct = {
   id: number | string;
   name: string;
-  slug?: string | null;
+  slug?: string | null; // <--- Backend đã có slug
   price: number | string;
   image?: string | null;
-  images?: string[];
+  images?: any[];
   colors?: BEColor[];
 };
 type ListResp<T> = {
-  items: T[];
+  items: T[]; // hoặc data
   total: number;
   page?: number;
   limit?: number;
@@ -52,53 +69,46 @@ type ListingPageProps = {
 };
 
 /* ================== SORT DROPDOWN ================== */
-function SortMenu({
-  value,
-  onChange,
-}: {
-  value: SortKey;
-  onChange: (k: SortKey) => void;
-}) {
+function SortMenu({ value, onChange }: { value: SortKey; onChange: (k: SortKey) => void }) {
   const [open, setOpen] = useState(false);
   const current = SORTS.find((s) => s.key === value) ?? SORTS[0];
 
   return (
-    <div className="relative">
+    <div className="relative z-20">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1 text-sm"
+        className="inline-flex items-center gap-1 text-sm border px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-50"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span className="text-neutral-500">Sắp xếp theo:</span>
+        <span className="text-neutral-500">Sắp xếp:</span>
         <span className="font-medium text-neutral-900">{current.label}</span>
-        <span>▾</span>
       </button>
 
       {open && (
-        <ul
-          className="absolute z-20 p-1 mt-2 bg-white border rounded-md shadow w-44"
-          role="listbox"
-          onMouseLeave={() => setOpen(false)}
-        >
-          {SORTS.map((s) => (
-            <li key={s.key}>
-              <button
-                className={`w-full rounded px-3 py-2 text-left text-sm hover:bg-neutral-100 ${
-                  s.key === value ? 'font-medium text-neutral-900' : 'text-neutral-700'
-                }`}
-                onClick={() => {
-                  onChange(s.key);
-                  setOpen(false);
-                }}
-                role="option"
-                aria-selected={s.key === value}
-              >
-                {s.label}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <ul
+            className="absolute right-0 z-30 p-1 mt-2 bg-white border rounded-md shadow-xl w-48 animate-in fade-in zoom-in-95 duration-100"
+            role="listbox"
+          >
+            {SORTS.map((s) => (
+              <li key={s.key}>
+                <button
+                  className={`w-full rounded px-3 py-2 text-left text-sm hover:bg-neutral-100 ${
+                    s.key === value ? 'font-bold text-neutral-900 bg-neutral-50' : 'text-neutral-700'
+                  }`}
+                  onClick={() => {
+                    onChange(s.key);
+                    setOpen(false);
+                  }}
+                >
+                  {s.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );
@@ -109,13 +119,13 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // === Query từ URL ===
+  // Query Params
   const pageParam = Math.max(1, Number(sp.get('page') || '1'));
   const qParam = sp.get('q') || '';
   const sortParam = (sp.get('sort') || 'relevance') as SortKey;
   const categoryFromURL = initialCategory ?? sp.get('category') ?? '';
 
-  // === State giao diện ===
+  // State
   const [q, setQ] = useState(qParam);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -125,57 +135,59 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
   const pageSize = 12;
   const activeCategory = categoryFromURL;
 
-  // === Gọi API danh sách sản phẩm ===
+  // Fetch API
   useEffect(() => {
     const params = new URLSearchParams();
     params.set('page', String(pageParam));
     params.set('limit', String(pageSize));
     if (qParam) params.set('q', qParam);
+    // Lưu ý: Backend NestJS của bạn có thể cần logic filter category (nếu chưa có thì sẽ hiện tất cả)
+    // Tạm thời gửi lên để backend xử lý nếu có
     if (categoryFromURL) params.set('category', categoryFromURL);
     if (sortParam) params.set('sort', sortParam);
 
+    // URL API của bạn
     const path = `/products?${params.toString()}`;
 
     setLoading(true);
     setError('');
 
     getJSON<ListResp<BEProduct> | BEProduct[]>(path)
-      .then((data) => {
-        // Chuẩn hóa cả 2 khả năng: {items,total} hoặc mảng thẳng
-        const arr: BEProduct[] = Array.isArray(data) ? data : (data as any).items ?? [];
-        const totalVal: number = Array.isArray(data) ? arr.length : (data as any).total ?? arr.length;
+      .then((data: any) => {
+        // Xử lý response trả về (có thể là { items: [] } hoặc { data: [] } hoặc [])
+        const rawItems = Array.isArray(data) ? data : (data.items || data.data || []);
+        const rawTotal = Array.isArray(data) ? data.length : (data.total || data.meta?.total || rawItems.length);
 
-        // Map về dạng ProductHover
-        const mapped: HoverProduct[] = arr.map((p) => ({
+        // Map dữ liệu sang format hiển thị
+        const mapped: HoverProduct[] = rawItems.map((p: BEProduct) => ({
           id: String(p.id),
+          slug: p.slug || String(p.id), // Lưu slug để dùng tạo link
           name: p.name,
           price: Number(p.price) || 0,
-          image: p.image || (Array.isArray(p.images) && p.images[0]) || '',
+          image: getProductImage(p), // Dùng hàm xử lý ảnh an toàn
           colors: (p.colors ?? []).map((c) => ({ name: c.name, hex: c.hex || undefined })),
         }));
 
         setItems(mapped);
-        setTotal(totalVal);
+        setTotal(Number(rawTotal));
       })
       .catch((e: any) => {
-        setError(e?.message || 'Lỗi tải dữ liệu');
+        console.error(e);
+        setError('Không thể tải dữ liệu sản phẩm.');
       })
       .finally(() => setLoading(false));
   }, [pageParam, pageSize, qParam, sortParam, categoryFromURL]);
 
-  // === Helpers push URL ===
+  // Handlers
   function pushParams(next: URLSearchParams, base?: string) {
-    const href =
-      (base ?? (initialCategory ? `/${initialCategory}` : '/tat-ca-san-pham')) +
-      `?${next.toString()}`;
+    const href = (base ?? (initialCategory ? `/${initialCategory}` : '/tat-ca-san-pham')) + `?${next.toString()}`;
     router.push(href);
   }
 
   function onSearch(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams(sp.toString());
-    if (q) params.set('q', q);
-    else params.delete('q');
+    if (q) params.set('q', q); else params.delete('q');
     params.set('page', '1');
     pushParams(params);
   }
@@ -187,128 +199,121 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
     pushParams(params);
   }
 
-  // breadcrumb JSON-LD (SEO)
-  const jsonLd = useMemo(
-    () => ({
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: 'https://chamvan.com/' },
-        {
-          '@type': 'ListItem',
-          position: 2,
-          name: 'Tất cả sản phẩm',
-          item: 'https://chamvan.com/tat-ca-san-pham',
-        },
-        ...(activeCategory
-          ? [
-              {
-                '@type': 'ListItem',
-                position: 3,
-                name: CATEGORIES.find((c) => c.slug === activeCategory)?.label ?? 'Danh mục',
-                item: `https://chamvan.com/tat-ca-san-pham/${activeCategory}`,
-              },
-            ]
-          : []),
-      ],
-    }),
-    [activeCategory],
-  );
+  // JSON-LD
+  const jsonLd = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: 'https://chamvan.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Tất cả sản phẩm', item: 'https://chamvan.com/tat-ca-san-pham' },
+      ...(activeCategory ? [{
+        '@type': 'ListItem', position: 3, 
+        name: CATEGORIES.find((c) => c.slug === activeCategory)?.label ?? 'Danh mục',
+        item: `https://chamvan.com/tat-ca-san-pham/${activeCategory}`
+      }] : [])
+    ],
+  }), [activeCategory]);
 
   return (
-    <div className="px-4 py-8 mx-auto max-w-7xl">
+    <div className="px-4 py-8 mx-auto max-w-7xl min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      {/* Breadcrumb + tiêu đề */}
-      <nav className="mb-2 text-sm text-neutral-500">
-        <Link href="/" className="hover:underline">
-          Trang chủ
-        </Link>
+      {/* Breadcrumb */}
+      <nav className="mb-4 text-sm text-neutral-500">
+        <Link href="/" className="hover:underline">Trang chủ</Link>
         <span className="mx-2">/</span>
-        <Link href="/tat-ca-san-pham" className="hover:underline">
-          Tất cả sản phẩm
-        </Link>
-        {activeCategory && (
-          <>
-            <span className="mx-2">/</span>
-            <span className="font-medium text-neutral-700">
-              {CATEGORIES.find((c) => c.slug === activeCategory)?.label}
-            </span>
-          </>
-        )}
+        <Link href="/tat-ca-san-pham" className="hover:underline text-neutral-800">Tất cả sản phẩm</Link>
       </nav>
 
-      <h1 className="mb-1 text-3xl font-semibold tracking-wide text-center">
-        {activeCategory ? CATEGORIES.find((c) => c.slug === activeCategory)?.label : 'TRUNG BÀY & TRANG TRÍ'}
-      </h1>
-      <p className="mb-6 text-sm text-center text-neutral-500">{total} sản phẩm phù hợp</p>
+      <div className="text-center mb-10">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+          {activeCategory ? CATEGORIES.find((c) => c.slug === activeCategory)?.label : 'TẤT CẢ SẢN PHẨM'}
+        </h1>
+        <p className="text-neutral-500 text-sm">Tinh hoa gỗ mộc thủ công Việt Nam</p>
+      </div>
 
-      {/* Dãy danh mục + ô tìm kiếm + sắp xếp */}
-      <div className="flex flex-wrap items-center gap-2 mb-6 md:gap-3">
-        {CATEGORIES.map((c) => {
-          const isActive = (initialCategory ? initialCategory : '') === c.slug;
-          const href = c.slug ? `/${c.slug}` : '/tat-ca-san-pham';
-          return (
-            <Link
-              key={c.slug}
-              href={href}
-              className={[
-                'rounded-full px-4 py-2 text-sm border',
-                isActive
-                  ? 'border-neutral-900 bg-neutral-900 text-white'
-                  : 'border-neutral-300 bg-white text-neutral-800 hover:border-neutral-500',
-              ].join(' ')}
-            >
-              {c.label}
-            </Link>
-          );
-        })}
+      {/* Controls */}
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-8 justify-between">
+        {/* Categories */}
+        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 max-w-full no-scrollbar">
+          {CATEGORIES.map((c) => {
+            const isActive = (initialCategory ? initialCategory : '') === c.slug;
+            const href = c.slug ? `/${c.slug}` : '/tat-ca-san-pham';
+            return (
+              <Link
+                key={c.slug}
+                href={href}
+                className={[
+                  'rounded-full px-4 py-2 text-sm border transition-all whitespace-nowrap',
+                  isActive ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 hover:text-neutral-900',
+                ].join(' ')}
+              >
+                {c.label}
+              </Link>
+            );
+          })}
+        </div>
 
-        {/* SEARCH */}
-        <form onSubmit={onSearch} className="ml-auto flex min-w-[280px] flex-1 max-w-md">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm án gian, khay, lộc bình..."
-            className="w-full px-4 py-2 text-sm border outline-none border-neutral-300 focus:ring-2 focus:ring-neutral-800"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 ml-2 text-sm font-medium text-white rounded-md bg-neutral-900 hover:bg-neutral-800"
-          >
-            Tìm
-          </button>
-        </form>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Search */}
+            <form onSubmit={onSearch} className="relative flex-1 md:w-64">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Tìm sản phẩm..."
+                className="w-full pl-4 pr-10 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
+              />
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-900">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </button>
+            </form>
 
-        {/* SORT */}
-        <div className="ml-2">
-          <SortMenu value={sortParam} onChange={onSortChange} />
+            {/* Sort */}
+            <SortMenu value={sortParam} onChange={onSortChange} />
         </div>
       </div>
 
-      {/* Kết quả */}
+      {/* Error */}
       {error && (
-        <div className="p-4 mb-6 text-sm text-red-700 border border-red-200 rounded-md bg-red-50">
-          Lỗi tải dữ liệu — {error}
+        <div className="p-4 mb-8 text-center text-red-600 bg-red-50 rounded-xl border border-red-100">
+          {error}
         </div>
       )}
 
+      {/* Loading / Empty / List */}
       {loading ? (
-        <div className="p-10 text-center border border-dashed rounded-md text-neutral-500">Đang tải…</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+           {[1,2,3,4,5,6,7,8].map(i => (
+             <div key={i} className="animate-pulse">
+               <div className="bg-neutral-200 aspect-[3/4] rounded-xl mb-3"></div>
+               <div className="h-4 bg-neutral-200 w-3/4 rounded mb-2"></div>
+               <div className="h-4 bg-neutral-200 w-1/2 rounded"></div>
+             </div>
+           ))}
+        </div>
       ) : items.length === 0 ? (
-        <div className="p-10 text-center border border-dashed rounded-md text-neutral-500">
-          Không tìm thấy sản phẩm phù hợp.
+        <div className="py-20 text-center">
+          <p className="text-neutral-400 mb-4">Không tìm thấy sản phẩm nào phù hợp.</p>
+          <button onClick={() => { setQ(''); pushParams(new URLSearchParams('')); }} className="text-sm font-medium text-neutral-900 underline underline-offset-4">
+            Xóa bộ lọc
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-5 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
           {items.map((p) => (
-            <ProductHover key={p.id} product={p} href={`/san-pham/${(p as any).slug}`} priceRenderer={formatCurrency} />
+            <ProductHover
+              key={p.id}
+              product={p}
+              // Ưu tiên SLUG, fallback ID
+              href={`/san-pham/${(p as any).slug || p.id}`} 
+              priceRenderer={formatCurrency}
+            />
           ))}
         </div>
       )}
 
-      {/* PHÂN TRANG */}
-      <div className="mt-10">
+      {/* Pagination */}
+      <div className="mt-16">
         <Pagination
           total={total}
           pageSize={pageSize}
@@ -325,16 +330,9 @@ function ListingPageInner({ initialCategory }: ListingPageProps) {
   );
 }
 
-/* ================== Wrapper với Suspense ================== */
 export default function ListingPage(props: ListingPageProps) {
   return (
-    <Suspense
-      fallback={
-        <div className="px-4 py-8 mx-auto text-sm max-w-7xl text-neutral-600">
-          Đang tải sản phẩm…
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="h-screen w-full flex items-center justify-center">Đang tải...</div>}>
       <ListingPageInner {...props} />
     </Suspense>
   );
