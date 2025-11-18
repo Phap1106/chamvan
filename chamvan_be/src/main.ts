@@ -1,90 +1,70 @@
-// src/main.ts
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
-import { seed } from './seeds/seed';
+import { json, urlencoded } from 'express';
 import { DataSource } from 'typeorm';
-import { Logger } from '@nestjs/common';
+import { seed } from './seeds/seed';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Cookie parser để backend có thể đọc cookie từ request
-  app.use(cookieParser());
-
-  // Prefix /api để khớp FE
+  // 1. Cấu hình Prefix API
   app.setGlobalPrefix('api');
 
-  /**
-   * Allowed origins: chỉnh ở đây nếu cần (thêm domain tạm thời của vercel nếu cần)
-   * Bạn có thể thay thế bằng process.env.ALLOWED_ORIGINS.split(',') nếu muốn quản lý bằng env.
-   */
-  const allowedOrigins = [
-    'http://localhost:3000',    // dev
-    'https://chamvan.com',      // production (FE)
-    'https://www.chamvan.com',  // nếu dùng www
-    // 'https://your-app.vercel.app', // thêm nếu cần
-  ];
+  // 2. Middleware xử lý dữ liệu
+  app.use(cookieParser());
+  // Tăng giới hạn upload để không bị lỗi khi gửi nhiều link ảnh
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
 
-  // Enable CORS động — quan trọng: không dùng '*' khi credentials = true
+  // 3. CẤU HÌNH CORS CHUẨN (Fix lỗi Not allowed)
+  // Thay vì dùng callback phức tạp, ta dùng mảng domain trực tiếp
   app.enableCors({
-    origin: (origin, callback) => {
-      // origin === undefined khi server-side call hoặc curl/postman (non-browser)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        return callback(null, true);
-      }
-      logger.warn(`Blocked CORS origin: ${origin}`);
-      return callback(new Error('Not allowed by CORS'), false);
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
-    credentials: true, // cần nếu dùng cookie-based auth cross-origin
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://chamvan.com',
+      'https://www.chamvan.com',
+      'https://admin.chamvan.com' // Dự phòng cho tương lai
+    ],
+    credentials: true, // Quan trọng: Cho phép gửi Cookie/Token
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
   });
 
-  /**
-   * Optional debug middleware để in origin & cookie (bật khi debug)
-   * Bỏ/điều chỉnh khi không cần in log nữa.
-   */
-  app.use((req, _res, next) => {
-    if (process.env.CORS_DEBUG === '1') {
-      logger.debug(`[DEBUG CORS] origin=${req.headers.origin} cookies=${req.headers.cookie}`);
-    }
-    next();
-  });
+  // 4. Validation toàn cục
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+      forbidUnknownValues: false, // Giúp linh hoạt hơn với dữ liệu frontend gửi lên
+    }),
+  );
 
-  // (debug) log /api/orders/my nếu cần (giữ như trước)
-  app.use('/api/orders/my', (req, _res, next) => {
-    if (process.env.AUTH_DEBUG === '1') {
-      const ck =
-        req.cookies?.cv_token ||
-        req.cookies?.cv_access_token ||
-        req.cookies?.token ||
-        null;
-      logger.debug('[AUTH] >>> /api/orders/my ' + JSON.stringify({
-        hasCookie: !!ck,
-        cookieFirst16: ck?.slice?.(0, 16),
-        authHeader: req.headers['authorization'],
-      }));
-    }
-    next();
-  });
-
-  // Seed admin nếu cần
+  // 5. Seed Admin (nếu bật)
   if (process.env.SEED_ADMIN_ON_BOOT === '1') {
-    const dataSource = app.get(DataSource);
-    await seed(dataSource);
+    try {
+      const dataSource = app.get(DataSource);
+      await seed(dataSource);
+      logger.log('Admin seeded successfully');
+    } catch (e) {
+      logger.error('Seeding failed', e);
+    }
   }
 
-  const port = process.env.PORT ? Number(process.env.PORT) : 4000;
-  await app.listen(port);
-  logger.log(`API server listening on port ${port}`);
+  // 6. Khởi động Server
+  const port = Number(process.env.PORT || 4000);
+  await app.listen(port, '0.0.0.0');
+  
+  logger.log(\`✅ API ready on port \${port} (Prefix: /api)\`);
+  logger.log(\`✅ CORS Enabled for: https://chamvan.com, http://localhost:3000\`);
 }
 
 bootstrap().catch((err) => {
-  // ensure error shown clearly
-  // eslint-disable-next-line no-console
   console.error('Fatal startup error:', err);
   process.exit(1);
 });
