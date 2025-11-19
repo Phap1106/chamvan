@@ -21,8 +21,10 @@ const nextConfig = {
       // Hanoia (hỗ trợ cả root và mọi subdomain)
       { protocol: 'https', hostname: 'hanoia.com', pathname: '/**' },
       { protocol: 'https', hostname: '*.hanoia.com', pathname: '/**' },
-
+      { protocol: 'https', hostname: 'encrypted-tbn0.gstatic.com', pathname: '/**' },
       // Unsplash
+      { protocol: 'https', hostname: 'drive.google.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'www.savor.vn', pathname: '/**' },
       { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
       { protocol: 'https', hostname: 'noithatdangkhoa.com' },
       // Facebook CDN – dùng wildcard hợp lệ: *.fbcdn.net (bao phủ scontent-*.fbcdn.net, …)

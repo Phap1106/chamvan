@@ -14,6 +14,7 @@ import {
   BarChart3,
   ShieldCheck,
   LogOut,
+  
 } from 'lucide-react';
 
 /* ===== Icon cho từng route ===== */
@@ -24,6 +25,7 @@ const iconOf = (href: string) => {
   if (href.startsWith('/admin/users')) return Users;
   if (href.startsWith('/admin/revenue')) return BarChart3;
   if (href.startsWith('/admin/staff')) return ShieldCheck;
+  if (href.startsWith('/admin/telegram')) return ShieldCheck;
   return Home;
 };
 
@@ -100,6 +102,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       { href: '/admin/users', label: 'Quản lý user' },
       { href: '/admin/revenue', label: 'Quản lý doanh thu' },
       { href: '/admin/staff', label: 'Quản lý nhân viên' },
+      { href: '/admin/telegram', label: 'Tài khoản telegrams' },
     ],
     []
   );
