@@ -34,20 +34,29 @@ let ProductsService = class ProductsService {
         this.specRepo = specRepo;
         this.cateRepo = cateRepo;
     }
-    async findAll() {
-        return this.repo.find({ relations: { images: true, colors: true, specs: true, categories: true }, order: { createdAt: 'DESC' } });
-    }
     async findOne(id) {
-        const item = await this.repo.findOne({ where: { id }, relations: { images: true, colors: true, specs: true, categories: true } });
+        const item = await this.repo.findOne({
+            where: { id },
+            relations: { images: true, colors: true, specs: true, categories: true },
+        });
         if (!item)
             throw new common_1.NotFoundException('Product not found');
         return item;
     }
     async findBySlug(slug) {
-        const item = await this.repo.findOne({ where: { slug }, relations: { images: true, colors: true, specs: true, categories: true } });
+        const item = await this.repo.findOne({
+            where: { slug },
+            relations: { images: true, colors: true, specs: true, categories: true },
+        });
         if (!item)
             throw new common_1.NotFoundException('Product not found');
         return item;
+    }
+    async findAll() {
+        return this.repo.find({
+            relations: { images: true, colors: true, specs: true, categories: true },
+            order: { createdAt: 'DESC' },
+        });
     }
     async create(dto) { const saved = await this.saveCoreAndChildren(dto); return this.findOne(saved.id); }
     async update(id, dto) {
@@ -81,11 +90,15 @@ let ProductsService = class ProductsService {
         let slug = anyDto.slug ? String(anyDto.slug).trim() : undefined;
         if (!slug && name)
             slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+        const rawImages = Array.isArray(anyDto.images) ? anyDto.images : [];
+        const uniqueImages = [...new Set(rawImages.map(u => String(u).trim()).filter(u => u.startsWith('http')))];
+        let image = input.image ? String(input.image).trim() : undefined;
+        if (!image && uniqueImages.length > 0) {
+            image = uniqueImages[0];
+        }
         const price = String(anyDto.price ?? input.price ?? 0);
         const sku = input.sku ? String(input.sku).trim() : undefined;
         const description = input.description ? String(input.description).trim() : undefined;
-        const image = input.image ? String(input.image).trim() : undefined;
-        const images = Array.isArray(anyDto.images) ? anyDto.images : [];
         const colors = Array.isArray(anyDto.colors) ? anyDto.colors : [];
         const specs = Array.isArray(anyDto.specs) ? anyDto.specs : [];
         const categoryIdsRaw = Array.isArray(anyDto.categories) ? anyDto.categories : [];
@@ -97,18 +110,17 @@ let ProductsService = class ProductsService {
         const core = this.repo.create({ ...(id ? { id } : {}), name, slug, price, sku, description, image, stock, sold, status, categories });
         const saved = await this.repo.save(core);
         await this.imgRepo.delete({ productId: saved.id });
-        await this.colorRepo.delete({ productId: saved.id });
-        await this.specRepo.delete({ productId: saved.id });
-        if (images.length) {
-            const entities = images.filter(u => typeof u === 'string' && u.trim()).map(url => this.imgRepo.create({ url: url.trim(), productId: saved.id }));
-            if (entities.length)
-                await this.imgRepo.save(entities);
+        if (uniqueImages.length) {
+            const entities = uniqueImages.map(url => this.imgRepo.create({ url: url.trim(), productId: saved.id }));
+            await this.imgRepo.save(entities);
         }
+        await this.colorRepo.delete({ productId: saved.id });
         if (colors.length) {
             const entities = colors.filter((c) => c && c.name).map((c) => this.colorRepo.create({ name: c.name.trim(), hex: c.hex, productId: saved.id }));
             if (entities.length)
                 await this.colorRepo.save(entities);
         }
+        await this.specRepo.delete({ productId: saved.id });
         if (specs.length) {
             const entities = specs.filter((s) => s && s.label && s.value).map((s) => this.specRepo.create({ label: s.label, value: s.value, productId: saved.id }));
             if (entities.length)
@@ -166,7 +178,8 @@ let ProductsService = class ProductsService {
             .sort((a, b) => (b.score || 0) - (a.score || 0))
             .slice(0, limit);
         const sameGroup = await this.repo.createQueryBuilder('p').leftJoinAndSelect('p.categories', 'c').leftJoinAndSelect('p.images', 'imgs')
-            .where('p.id <> :id', { id: pid }).andWhere('p.status = :st', { st: 'open' }).andWhere(catIds.length ? 'c.id IN (:...catIds)' : '1=1', { catIds })
+            .where('p.id <> :id', { id: pid }).andWhere('p.status = :st', { st: 'open' })
+            .andWhere(catIds.length ? 'c.id IN (:...catIds)' : '1=1', { catIds })
             .orderBy('p.createdAt', 'DESC').take(24).getMany();
         const topSellers = await this.repo.find({ where: { status: 'open' }, order: { sold: 'DESC', createdAt: 'DESC' }, take: 24, relations: { categories: true, images: true } });
         const seenSug = new Set([pid]);

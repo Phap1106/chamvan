@@ -55,7 +55,7 @@ __decorate([
     __metadata("design:type", String)
 ], Product.prototype, "sku", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'text', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'longtext', nullable: true }),
     __metadata("design:type", String)
 ], Product.prototype, "description", void 0);
 __decorate([
@@ -71,7 +71,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Product.prototype, "sold", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
+    (0, typeorm_1.Column)({ type: 'longtext', nullable: true }),
     __metadata("design:type", String)
 ], Product.prototype, "image", void 0);
 __decorate([

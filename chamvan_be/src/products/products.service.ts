@@ -13,7 +13,7 @@ type UpsertProductDto = CreateProductDto & { id?: number };
 export type RecItem = {
   id: number;
   name: string;
-  slug?: string; // <--- ĐÃ THÊM SLUG
+  slug?: string;
   price: number;
   image?: string;
   sold?: number;
@@ -36,27 +36,46 @@ export class ProductsService {
     @InjectRepository(Category) private readonly cateRepo: Repository<Category>,
   ) {}
 
-  // --- CRUD ---
-  async findAll() {
-    return this.repo.find({ relations: { images: true, colors: true, specs: true, categories: true }, order: { createdAt: 'DESC' } });
-  }
+  // --- FIND ONE BY ID (Đã xác nhận lại relations) ---
   async findOne(id: number) {
-    const item = await this.repo.findOne({ where: { id }, relations: { images: true, colors: true, specs: true, categories: true } });
+    const item = await this.repo.findOne({
+      where: { id },
+      relations: { images: true, colors: true, specs: true, categories: true },
+    });
     if (!item) throw new NotFoundException('Product not found');
     return item;
   }
+
+  // --- FIND ONE BY SLUG ---
   async findBySlug(slug: string) {
-    const item = await this.repo.findOne({ where: { slug }, relations: { images: true, colors: true, specs: true, categories: true } });
+    const item = await this.repo.findOne({
+      where: { slug },
+      relations: { images: true, colors: true, specs: true, categories: true },
+    });
     if (!item) throw new NotFoundException('Product not found');
     return item;
   }
+  
+  // --- FIND ALL ---
+  async findAll() {
+    return this.repo.find({
+      relations: { images: true, colors: true, specs: true, categories: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+  
+  // --- CREATE ---
   async create(dto: CreateProductDto) { const saved = await this.saveCoreAndChildren(dto); return this.findOne(saved.id); }
+
+  // --- UPDATE ---
   async update(id: number, dto: CreateProductDto) {
     const exists = await this.repo.findOne({ where: { id } });
     if (!exists) throw new NotFoundException('Product not found');
     const saved = await this.saveCoreAndChildren({ ...dto, id });
     return this.findOne(saved.id);
   }
+
+  // --- REMOVE ---
   async remove(id: number) {
     const found = await this.repo.findOne({ where: { id } });
     if (!found) throw new NotFoundException('Product not found');
@@ -67,7 +86,9 @@ export class ProductsService {
     return { success: true };
   }
 
-  // --- HELPERS ---
+  // ====================== Helpers Logic ======================
+
+  // Lấy ảnh đại diện đầu tiên (Dùng cho List/Rec)
   private pickFirstImage(p: Product & { images?: ProductImage[] }): string | undefined {
     if (p.image) return p.image;
     const imgs = p.images ?? [];
@@ -75,18 +96,27 @@ export class ProductsService {
   }
   private normPrice(v: unknown): number { const n = Number(v); return Number.isFinite(n) ? n : 0; }
 
+  // Logic lưu dữ liệu (đã fix lỗi trùng lặp và đồng bộ ảnh)
   private async saveCoreAndChildren(input: UpsertProductDto): Promise<Product> {
     const anyDto = input as any;
     const id = input.id ? Number(input.id) : undefined;
     const name = String(input.name ?? '').trim();
+    
     let slug = anyDto.slug ? String(anyDto.slug).trim() : undefined;
     if (!slug && name) slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
+    const rawImages: string[] = Array.isArray(anyDto.images) ? anyDto.images : [];
+    const uniqueImages = [...new Set(rawImages.map(u => String(u).trim()).filter(u => u.startsWith('http')))];
+
+    let image = input.image ? String(input.image).trim() : undefined;
+    if (!image && uniqueImages.length > 0) {
+        image = uniqueImages[0];
+    }
+    
     const price = String(anyDto.price ?? input.price ?? 0);
     const sku = input.sku ? String(input.sku).trim() : undefined;
     const description = input.description ? String(input.description).trim() : undefined;
-    const image = input.image ? String(input.image).trim() : undefined;
-    const images: string[] = Array.isArray(anyDto.images) ? anyDto.images : [];
+    
     const colors = Array.isArray(anyDto.colors) ? anyDto.colors : [];
     const specs = Array.isArray(anyDto.specs) ? anyDto.specs : [];
     const categoryIdsRaw = Array.isArray(anyDto.categories) ? anyDto.categories : [];
@@ -99,18 +129,19 @@ export class ProductsService {
     const core = this.repo.create({ ...(id ? { id } : {}), name, slug, price, sku, description, image, stock, sold, status, categories } as Partial<Product>);
     const saved = await this.repo.save(core as any);
 
+    // Xóa cũ thêm mới (Ảnh gallery)
     await this.imgRepo.delete({ productId: saved.id });
-    await this.colorRepo.delete({ productId: saved.id });
-    await this.specRepo.delete({ productId: saved.id });
-
-    if (images.length) {
-      const entities = images.filter(u => typeof u === 'string' && u.trim()).map(url => this.imgRepo.create({ url: url.trim(), productId: saved.id }));
-      if (entities.length) await this.imgRepo.save(entities);
+    if (uniqueImages.length) {
+      const entities = uniqueImages.map(url => this.imgRepo.create({ url: url.trim(), productId: saved.id }));
+      await this.imgRepo.save(entities);
     }
+    
+    await this.colorRepo.delete({ productId: saved.id });
     if (colors.length) {
       const entities = colors.filter((c: any) => c && c.name).map((c: any) => this.colorRepo.create({ name: c.name.trim(), hex: c.hex, productId: saved.id }));
       if (entities.length) await this.colorRepo.save(entities);
     }
+    await this.specRepo.delete({ productId: saved.id });
     if (specs.length) {
       const entities = specs.filter((s: any) => s && s.label && s.value).map((s: any) => this.specRepo.create({ label: s.label, value: s.value, productId: saved.id }));
       if (entities.length) await this.specRepo.save(entities);
@@ -118,7 +149,7 @@ export class ProductsService {
     return saved;
   }
 
-  // --- RECOMMENDATIONS (Đã thêm slug) ---
+  // --- RECOMMENDATIONS (Giữ nguyên logic) ---
   async getRecommendations(id: number | string, limit = 12): Promise<Recommendations> {
     const pid = Number(id);
     const product = await this.repo.findOne({ where: { id: pid }, relations: { categories: true, images: true } });
@@ -162,7 +193,7 @@ export class ProductsService {
         const catScore = shared ? 40 : 0;
 
         return {
-          id: p.id, name: p.name, slug: p.slug, // <--- ĐÃ THÊM SLUG
+          id: p.id, name: p.name, slug: p.slug,
           price, image: this.pickFirstImage(p),
           sold: p.sold, createdAt: p.createdAt,
           categories: (p.categories || []).map((c) => ({ id: c.id, slug: c.slug })),
@@ -173,7 +204,8 @@ export class ProductsService {
       .slice(0, limit);
 
     const sameGroup = await this.repo.createQueryBuilder('p').leftJoinAndSelect('p.categories', 'c').leftJoinAndSelect('p.images', 'imgs')
-      .where('p.id <> :id', { id: pid }).andWhere('p.status = :st', { st: 'open' }).andWhere(catIds.length ? 'c.id IN (:...catIds)' : '1=1', { catIds })
+      .where('p.id <> :id', { id: pid }).andWhere('p.status = :st', { st: 'open' })
+      .andWhere(catIds.length ? 'c.id IN (:...catIds)' : '1=1', { catIds })
       .orderBy('p.createdAt', 'DESC').take(24).getMany();
     const topSellers = await this.repo.find({ where: { status: 'open' }, order: { sold: 'DESC', createdAt: 'DESC' }, take: 24, relations: { categories: true, images: true } });
 
@@ -184,7 +216,7 @@ export class ProductsService {
         if (!seenSug.has(p.id)) {
           seenSug.add(p.id);
           out.push({
-            id: p.id, name: p.name, slug: p.slug, // <--- ĐÃ THÊM SLUG
+            id: p.id, name: p.name, slug: p.slug,
             price: this.normPrice(p.price), image: this.pickFirstImage(p),
             sold: p.sold, createdAt: p.createdAt, categories: (p.categories || []).map(c => ({ id: c.id, slug: c.slug })),
           });

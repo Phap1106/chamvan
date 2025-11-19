@@ -21,14 +21,13 @@ async function bootstrap() {
   app.use(urlencoded({ extended: true, limit: '10mb' }));
 
   // 3. CẤU HÌNH CORS CHUẨN (Fix lỗi Not allowed)
-  // Thay vì dùng callback phức tạp, ta dùng mảng domain trực tiếp
   app.enableCors({
     origin: [
       'http://localhost:3000',
       'http://localhost:3001',
       'https://chamvan.com',
       'https://www.chamvan.com',
-      'https://admin.chamvan.com' // Dự phòng cho tương lai
+      'https://admin.chamvan.com'
     ],
     credentials: true, // Quan trọng: Cho phép gửi Cookie/Token
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -41,7 +40,7 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       transformOptions: { enableImplicitConversion: true },
-      forbidUnknownValues: false, // Giúp linh hoạt hơn với dữ liệu frontend gửi lên
+      forbidUnknownValues: false,
     }),
   );
 
@@ -60,8 +59,8 @@ async function bootstrap() {
   const port = Number(process.env.PORT || 4000);
   await app.listen(port, '0.0.0.0');
   
-  logger.log(\`✅ API ready on port \${port} (Prefix: /api)\`);
-  logger.log(\`✅ CORS Enabled for: https://chamvan.com, http://localhost:3000\`);
+  logger.log(`✅ API ready on port ${port} (Prefix: /api)`);
+  logger.log(`✅ CORS Enabled for: https://chamvan.com, http://localhost:3000`);
 }
 
 bootstrap().catch((err) => {

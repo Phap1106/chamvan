@@ -1271,7 +1271,7 @@
 
 
 
-
+//src/app/admin/products/page.tsx
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';

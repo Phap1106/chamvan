@@ -1,4 +1,3 @@
-//src/app/san-pham/[slug]/page.tsx
 import Image from "next/image";
 import ProductInfoSection from "./ProductInfoSection";
 import ProductGallery from "@/components/ProductGallery";
@@ -10,8 +9,8 @@ export type UIProduct = {
   name: string;
   slug?: string;
   price: number;
-  image?: string;   // Ảnh đại diện (cho các component cũ)
-  images: string[]; // Full danh sách ảnh (cho Gallery)
+  image?: string;   
+  images: string[]; // Full danh sách ảnh (Gallery)
   sku?: string;
   colors?: { name: string; hex: string }[];
   description?: string;
@@ -22,26 +21,28 @@ export type UIProduct = {
 // --- Config ---
 const BASE = "https://api.chamvan.com/api";
 
-// --- Helpers ---
+// --- Helper: Chuẩn hóa URL ảnh từ API (Fix lỗi không hiển thị gallery) ---
 function getImages(root: any): string[] {
   const list: string[] = [];
-
-  // 1. Ưu tiên ảnh đại diện
+  
+  // 1. Lấy ảnh chính (string)
   if (root.image && typeof root.image === 'string' && root.image.startsWith('http')) {
     list.push(root.image);
   }
 
-  // 2. Lấy thêm từ bảng images (nếu có)
+  // 2. Lấy ảnh từ mảng quan hệ 'images' (Array of objects)
   if (Array.isArray(root.images)) {
     root.images.forEach((img: any) => {
-      const url = typeof img === 'string' ? img : img.url;
-      if (url && typeof url === 'string' && !list.includes(url)) {
+      const url = img?.url; // Lấy url từ object TypeORM
+      
+      // Chỉ thêm nếu là URL hợp lệ, không trùng và không phải ảnh chính (đã có ở list[0])
+      if (url && typeof url === 'string' && url.startsWith('http') && !list.includes(url)) {
         list.push(url);
       }
     });
   }
 
-  // 3. Nếu danh sách rỗng -> Fallback
+  // 3. Fallback nếu không có ảnh nào
   if (list.length === 0) list.push("/placeholder.jpg");
   
   return list;
@@ -55,7 +56,6 @@ function coerceNumber(n: any): number {
 // --- API Fetching ---
 async function fetchProductBySlug(slug: string): Promise<UIProduct | null> {
   try {
-    // Gọi API: NestJS Controller của bạn đã hỗ trợ tìm theo cả ID và Slug
     const res = await fetch(`${BASE}/products/${slug}`, { cache: "no-store" });
     
     if (!res.ok) {
@@ -64,19 +64,20 @@ async function fetchProductBySlug(slug: string): Promise<UIProduct | null> {
     }
     
     const root = await res.json();
-    const images = getImages(root);
+    const images = getImages(root); // Dùng helper đã fix
 
     return {
       id: String(root.id),
       name: root.name ?? "Sản phẩm",
       price: coerceNumber(root.price),
-      image: images[0], // Ảnh đầu tiên làm ảnh đại diện
+      image: images[0],
       images: images,   // Full list cho Gallery
       sku: root.sku,
       colors: (root.colors ?? []).map((c: any) => ({ name: c?.name || "", hex: c?.hex || "" })),
       description: root.description,
       specs: (root.specs ?? []).map((s: any) => ({ label: s?.label || "", value: s?.value || "" })),
       category: root.categories?.[0]?.name,
+      slug: root.slug
     };
   } catch (err) {
     console.error("Error fetching product:", err);
@@ -91,13 +92,11 @@ async function fetchSuggested(productId: string): Promise<UIProduct[]> {
 
     const json = await res.json();
     
-    // Gộp related và suggested
     const raw = [
       ...(Array.isArray(json.related) ? json.related : []),
       ...(Array.isArray(json.suggested) ? json.suggested : [])
     ];
 
-    // Lọc trùng ID
     const seen = new Set();
     return raw
       .filter(item => {
@@ -126,7 +125,7 @@ async function fetchSuggested(productId: string): Promise<UIProduct[]> {
 
 // --- Page Component ---
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
-  const { slug } = await params; // Await params (cho Next.js 15+)
+  const { slug } = await params;
 
   const product = await fetchProductBySlug(slug);
   if (!product) notFound();
@@ -136,7 +135,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
   return (
     <div className="max-w-6xl px-4 py-8 mx-auto md:px-6 md:py-12">
       <div className="grid gap-10 md:grid-cols-2 lg:gap-16">
-        {/* Cột Trái: Gallery */}
+        {/* Cột Trái: Gallery - Đảm bảo nhận mảng URL strings */}
         <div>
            <ProductGallery images={product.images} alt={product.name} />
         </div>
@@ -158,8 +157,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
             {suggested.map((p) => (
               <a 
                 key={p.id} 
-                // Ưu tiên dùng slug nếu có, fallback về ID
-                href={`/san-pham/${(p as any).slug || p.id}`} 
+                href={`/san-pham/${p.slug || p.id}`} 
                 className="group block"
               >
                 <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 mb-4 border border-gray-100">
