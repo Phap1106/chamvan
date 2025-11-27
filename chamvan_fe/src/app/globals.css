@@ -1,4 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&display=swap");
 @import "tailwindcss";
+
 
 /* ================= Tailwind v4 theme tokens ================= */
 @theme {
@@ -12,7 +14,8 @@
 
   /* Font variables (được gán ở RootLayout) */
   --font-sans: var(--font-sans, Manrope, Inter, Helvetica, Arial, sans-serif);
-  --font-display: var(--font-display, "Playfair Display", Georgia, serif);
+  /* --font-display: var(--font-display, "Playfair Display", Georgia, serif); */
+  --font-display: "Playfair Display", Georgia, serif;
 }
 
 /* ================= Base ================= */

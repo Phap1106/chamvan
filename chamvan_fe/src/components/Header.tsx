@@ -8,6 +8,7 @@ import { useAuth } from "./providers/AuthProvider";
 import { useCart } from "./providers/CartProvider";
 import MiniCart from "@/components/cart/MiniCart";
 import AccountMenu from "@/components/account/AccountMenu";
+import Image from "next/image";  
 
 /* ================= Header ================= */
 export default function Header() {
@@ -118,11 +119,33 @@ export default function Header() {
         {/* Main nav */}
         <nav className="flex items-center justify-between w-full px-4 py-3 border-b md:px-6">
           {/* LEFT: brand */}
-          <div className="min-w-[160px] md:min-w-[180px]">
+          {/* <div className="min-w-[160px] md:min-w-[180px]">
             <Link href="/" className="text-[16px] md:text-lg font-semibold tracking-wide">
               CHẠM VÂN - CỔ MỘC TIỆM
             </Link>
-          </div>
+          </div> */}
+
+          <div className="min-w-[180px] md:min-w-[200px]">
+  <Link
+    href="/"
+    className="inline-flex items-center gap-2 md:gap-3"
+  >
+    <Image
+      src="/icon-logo/logo-cv-2.png" 
+      alt="Logo Chạm Vân"
+      width={32}
+      height={32}
+      className="h-8 w-8 md:h-9 md:w-9"
+      priority
+    />
+    <span className="text-[15px] md:text-lg font-semibold tracking-wide">
+      CHẠM VÂN - CỔ MỘC TIỆM
+    </span>
+  </Link>
+</div>
+
+
+
 
           {/* CENTER: menu (desktop) */}
           <ul className="hidden items-center gap-7 text-[14px] md:flex">
