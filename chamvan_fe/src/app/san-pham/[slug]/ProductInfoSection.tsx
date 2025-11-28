@@ -17,9 +17,9 @@
 //   sku?: string;
 //   colors?: { name: string; hex: string }[];
 //   description?: string;
-//   specs?: { label: string; value: string }[];
+//   specs?: { label: string; value: string }[]; // Dữ liệu thông số từ API
 //   category?: string;
-//   slug?: string; // <--- Thêm slug vào Type P
+//   slug?: string;
 // };
 
 // export default function ProductInfoSection({ product }: { product: P }) {
@@ -36,7 +36,7 @@
 //   );
 //   const priceStr = useMemo(() => p.price.toLocaleString("vi-VN") + " ₫", [p.price]);
 
-//   // FIX: Lấy slug hoặc ID cho đường dẫn chia sẻ
+//   // Đường dẫn chia sẻ (Dùng slug hoặc ID)
 //   const sharePath = `/san-pham/${p.slug || p.id}`;
 
 //   return (
@@ -65,7 +65,6 @@
 //       </div>
 
 //       <div className="flex items-center gap-4 mt-4 text-sm">
-//         {/* SỬA LỖI CÚ PHÁP SHARE BUTTON */}
 //         <ShareButton path={sharePath} title={p.name} />
 //         <WishlistButton productId={p.id} />
 //       </div>
@@ -97,7 +96,8 @@
 //       </div>
 
 //       <div id="specifications" className="mt-8">
-//         {p.specs?.length ? (
+//         {/* Kiểm tra length của specs và render */}
+//         {p.specs && p.specs.length > 0 ? (
 //           <div className="overflow-hidden border rounded-md">
 //             {p.specs.map((s, i) => (
 //               <div key={i} className="grid grid-cols-2 text-sm border-b last:border-b-0">
@@ -119,14 +119,12 @@
 
 
 
-
-
-
 // src/app/san-pham/[id]/ProductInfoSection.tsx
-
 "use client";
 
 import { useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
+
 import AddToCartButton from "@/components/AddToCartButton";
 import QtyStepper from "@/components/QtyStepper";
 import ColorSwatches from "@/components/ColorSwatches";
@@ -141,14 +139,16 @@ type P = {
   sku?: string;
   colors?: { name: string; hex: string }[];
   description?: string;
-  specs?: { label: string; value: string }[]; // Dữ liệu thông số từ API
+  specs?: { label: string; value: string }[];
   category?: string;
   slug?: string;
 };
 
 export default function ProductInfoSection({ product }: { product: P }) {
   const p = product;
-  const [colorHex, setColorHex] = useState<string | undefined>(p.colors?.[0]?.hex || undefined);
+  const [colorHex, setColorHex] = useState<string | undefined>(
+    p.colors?.[0]?.hex || undefined
+  );
   const [qty, setQty] = useState<number>(1);
   const [expanded, setExpanded] = useState(false);
 
@@ -158,25 +158,35 @@ export default function ProductInfoSection({ product }: { product: P }) {
       "Sản phẩm gỗ thủ công hoàn thiện tỉ mỉ, bền bỉ và tiện dụng cho không gian sống hiện đại.",
     [p.description]
   );
-  const priceStr = useMemo(() => p.price.toLocaleString("vi-VN") + " ₫", [p.price]);
+  const priceStr = useMemo(
+    () => p.price.toLocaleString("vi-VN") + " ₫",
+    [p.price]
+  );
 
-  // Đường dẫn chia sẻ (Dùng slug hoặc ID)
   const sharePath = `/san-pham/${p.slug || p.id}`;
 
   return (
     <div className="md:sticky md:top-20">
       <h1 className="text-3xl font-semibold tracking-tight">{p.name}</h1>
       <div className="mt-2 text-xl font-medium">{priceStr}</div>
-      {p.sku && <div className="mt-1 text-sm text-neutral-500">Mã sản phẩm: {p.sku}</div>}
+      {p.sku && (
+        <div className="mt-1 text-sm text-neutral-500">
+          Mã sản phẩm: {p.sku}
+        </div>
+      )}
 
       {!!p.colors?.length && (
         <div className="mt-6">
           <div className="mb-2 text-sm font-medium">MÀU SẮC</div>
-          <ColorSwatches colors={p.colors} value={colorHex} onChange={setColorHex} />
+          <ColorSwatches
+            colors={p.colors}
+            value={colorHex}
+            onChange={setColorHex}
+          />
         </div>
       )}
 
-      <div className="flex items-center gap-4 mt-6">
+      <div className="mt-6 flex items-center gap-4">
         <QtyStepper value={qty} onChange={setQty} />
         <AddToCartButton
           productId={p.id}
@@ -188,7 +198,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
         />
       </div>
 
-      <div className="flex items-center gap-4 mt-4 text-sm">
+      <div className="mt-4 flex items-center gap-4 text-sm">
         <ShareButton path={sharePath} title={p.name} />
         <WishlistButton productId={p.id} />
       </div>
@@ -196,19 +206,50 @@ export default function ProductInfoSection({ product }: { product: P }) {
       <hr className="my-6 border-neutral-200" />
 
       <div className="flex gap-8 text-sm font-medium">
-        <a href="#description" className="pb-2 border-b-2 border-neutral-900">
+        <a href="#description" className="border-b-2 border-neutral-900 pb-2">
           Mô tả sản phẩm
         </a>
-        <a href="#specifications" className="pb-2 text-neutral-500 hover:text-neutral-800">
+        <a
+          href="#specifications"
+          className="pb-2 text-neutral-500 hover:text-neutral-800"
+        >
           Đặc điểm
         </a>
       </div>
 
+      {/* MÔ TẢ – hỗ trợ Markdown */}
       <div id="description" className="mt-4">
-        <div className={expanded ? "leading-7 text-neutral-700" : "line-clamp-6 leading-7 text-neutral-700"}>
-          {desc}
+        <div className="relative text-sm text-neutral-700 leading-7">
+          <div
+            className={
+              expanded
+                ? "space-y-2"
+                : "space-y-2 max-h-[11rem] overflow-hidden"
+            }
+          >
+            <ReactMarkdown
+              components={{
+                p: ({ node, ...props }) => (
+                  <p className="whitespace-pre-wrap" {...props} />
+                ),
+                ul: ({ node, ...props }) => (
+                  <ul className="ml-5 list-disc space-y-1" {...props} />
+                ),
+                ol: ({ node, ...props }) => (
+                  <ol className="ml-5 list-decimal space-y-1" {...props} />
+                ),
+                li: ({ node, ...props }) => <li {...props} />,
+              }}
+            >
+              {desc}
+            </ReactMarkdown>
+          </div>
+
+          {!expanded && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent" />
+          )}
         </div>
-        {!expanded && <div className="h-10 -mt-10 pointer-events-none bg-gradient-to-t from-white to-transparent" />}
+
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -219,19 +260,45 @@ export default function ProductInfoSection({ product }: { product: P }) {
         </button>
       </div>
 
+      {/* ĐẶC ĐIỂM / THÔNG SỐ – hỗ trợ Markdown ở phần value */}
       <div id="specifications" className="mt-8">
-        {/* Kiểm tra length của specs và render */}
         {p.specs && p.specs.length > 0 ? (
-          <div className="overflow-hidden border rounded-md">
+          <div className="overflow-hidden rounded-md border">
             {p.specs.map((s, i) => (
-              <div key={i} className="grid grid-cols-2 text-sm border-b last:border-b-0">
-                <div className="px-4 py-3 bg-neutral-50">{s.label}</div>
-                <div className="px-4 py-3">{s.value}</div>
+              <div
+                key={i}
+                className="grid grid-cols-2 border-b text-sm last:border-b-0"
+              >
+                <div className="bg-neutral-50 px-4 py-3">{s.label}</div>
+                <div className="px-4 py-3">
+                  <ReactMarkdown
+                    className="space-y-1 text-neutral-800"
+                    components={{
+                      p: ({ node, ...props }) => (
+                        <p className="whitespace-pre-wrap" {...props} />
+                      ),
+                      ul: ({ node, ...props }) => (
+                        <ul className="ml-4 list-disc space-y-0.5" {...props} />
+                      ),
+                      ol: ({ node, ...props }) => (
+                        <ol
+                          className="ml-4 list-decimal space-y-0.5"
+                          {...props}
+                        />
+                      ),
+                      li: ({ node, ...props }) => <li {...props} />,
+                    }}
+                  >
+                    {s.value}
+                  </ReactMarkdown>
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-sm text-neutral-600">Thông số sẽ được cập nhật.</div>
+          <div className="text-sm text-neutral-600">
+            Thông số sẽ được cập nhật.
+          </div>
         )}
       </div>
     </div>
