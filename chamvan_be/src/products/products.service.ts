@@ -11,6 +11,20 @@ import { CreateProductDto } from './dto/create-product.dto';
 
 type UpsertProductDto = CreateProductDto & { id?: number; slug?: string };
 
+function slugify(input: string): string {
+  return input
+    .normalize('NFD')                    // tách dấu khỏi ký tự gốc
+    .replace(/[\u0300-\u036f]/g, '')     // xóa toàn bộ dấu thanh/mũ/móc
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')         // mọi ký tự không phải a-z0-9 → "-"
+    .replace(/^-+|-+$/g, '')             // bỏ "-" đầu/cuối
+    .replace(/-{2,}/g, '-');             // gộp nhiều "-" liên tiếp
+}
+
+
+
 export type RecItem = {
   id: number;
   name: string;
@@ -138,12 +152,15 @@ export class ProductsService {
 
   // Logic lưu dữ liệu (core + children)
   private async saveCoreAndChildren(input: UpsertProductDto): Promise<Product> {
-    const anyDto = input as any;
-    const id = input.id ? Number(input.id) : undefined;
-    const name = String(input.name ?? '').trim();
+     const anyDto = input as any;
+  const id = input.id ? Number(input.id) : undefined;
+  const name = String(input.name ?? '').trim();
 
-    // Ưu tiên slug gửi vào, nếu không có thì sinh từ name
-     const slug = this.normalizeSlug(undefined, name);
+  // Ưu tiên slug FE gửi, nếu không có thì dùng name
+  let slugSource = anyDto.slug ? String(anyDto.slug).trim() : '';
+  if (!slugSource && name) slugSource = name;
+
+  const slug = slugSource ? slugify(slugSource) : undefined;
 
     const rawImages: string[] = Array.isArray(anyDto.images) ? anyDto.images : [];
     const uniqueImages = [

@@ -1,124 +1,3 @@
-// // src/app/san-pham/[id]/ProductInfoSection.tsx
-
-// "use client";
-
-// import { useMemo, useState } from "react";
-// import AddToCartButton from "@/components/AddToCartButton";
-// import QtyStepper from "@/components/QtyStepper";
-// import ColorSwatches from "@/components/ColorSwatches";
-// import ShareButton from "@/components/ShareButton";
-// import WishlistButton from "@/components/WishlistButton";
-
-// type P = {
-//   id: string;
-//   name: string;
-//   price: number;
-//   image?: string;
-//   sku?: string;
-//   colors?: { name: string; hex: string }[];
-//   description?: string;
-//   specs?: { label: string; value: string }[]; // Dữ liệu thông số từ API
-//   category?: string;
-//   slug?: string;
-// };
-
-// export default function ProductInfoSection({ product }: { product: P }) {
-//   const p = product;
-//   const [colorHex, setColorHex] = useState<string | undefined>(p.colors?.[0]?.hex || undefined);
-//   const [qty, setQty] = useState<number>(1);
-//   const [expanded, setExpanded] = useState(false);
-
-//   const desc = useMemo(
-//     () =>
-//       p.description ??
-//       "Sản phẩm gỗ thủ công hoàn thiện tỉ mỉ, bền bỉ và tiện dụng cho không gian sống hiện đại.",
-//     [p.description]
-//   );
-//   const priceStr = useMemo(() => p.price.toLocaleString("vi-VN") + " ₫", [p.price]);
-
-//   // Đường dẫn chia sẻ (Dùng slug hoặc ID)
-//   const sharePath = `/san-pham/${p.slug || p.id}`;
-
-//   return (
-//     <div className="md:sticky md:top-20">
-//       <h1 className="text-3xl font-semibold tracking-tight">{p.name}</h1>
-//       <div className="mt-2 text-xl font-medium">{priceStr}</div>
-//       {p.sku && <div className="mt-1 text-sm text-neutral-500">Mã sản phẩm: {p.sku}</div>}
-
-//       {!!p.colors?.length && (
-//         <div className="mt-6">
-//           <div className="mb-2 text-sm font-medium">MÀU SẮC</div>
-//           <ColorSwatches colors={p.colors} value={colorHex} onChange={setColorHex} />
-//         </div>
-//       )}
-
-//       <div className="flex items-center gap-4 mt-6">
-//         <QtyStepper value={qty} onChange={setQty} />
-//         <AddToCartButton
-//           productId={p.id}
-//           name={p.name}
-//           price={p.price}
-//           image={p.image || "/placeholder.jpg"}
-//           qty={qty}
-//           color={colorHex}
-//         />
-//       </div>
-
-//       <div className="flex items-center gap-4 mt-4 text-sm">
-//         <ShareButton path={sharePath} title={p.name} />
-//         <WishlistButton productId={p.id} />
-//       </div>
-
-//       <hr className="my-6 border-neutral-200" />
-
-//       <div className="flex gap-8 text-sm font-medium">
-//         <a href="#description" className="pb-2 border-b-2 border-neutral-900">
-//           Mô tả sản phẩm
-//         </a>
-//         <a href="#specifications" className="pb-2 text-neutral-500 hover:text-neutral-800">
-//           Đặc điểm
-//         </a>
-//       </div>
-
-//       <div id="description" className="mt-4">
-//         <div className={expanded ? "leading-7 text-neutral-700" : "line-clamp-6 leading-7 text-neutral-700"}>
-//           {desc}
-//         </div>
-//         {!expanded && <div className="h-10 -mt-10 pointer-events-none bg-gradient-to-t from-white to-transparent" />}
-//         <button
-//           type="button"
-//           onClick={() => setExpanded((v) => !v)}
-//           className="mt-2 text-sm font-medium underline underline-offset-2"
-//           aria-expanded={expanded}
-//         >
-//           {expanded ? "Thu gọn" : "Xem thêm"}
-//         </button>
-//       </div>
-
-//       <div id="specifications" className="mt-8">
-//         {/* Kiểm tra length của specs và render */}
-//         {p.specs && p.specs.length > 0 ? (
-//           <div className="overflow-hidden border rounded-md">
-//             {p.specs.map((s, i) => (
-//               <div key={i} className="grid grid-cols-2 text-sm border-b last:border-b-0">
-//                 <div className="px-4 py-3 bg-neutral-50">{s.label}</div>
-//                 <div className="px-4 py-3">{s.value}</div>
-//               </div>
-//             ))}
-//           </div>
-//         ) : (
-//           <div className="text-sm text-neutral-600">Thông số sẽ được cập nhật.</div>
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-
-
-
 // src/app/san-pham/[id]/ProductInfoSection.tsx
 "use client";
 
@@ -186,7 +65,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
         </div>
       )}
 
-      <div className="mt-6 flex items-center gap-4">
+      <div className="flex items-center gap-4 mt-6">
         <QtyStepper value={qty} onChange={setQty} />
         <AddToCartButton
           productId={p.id}
@@ -198,7 +77,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
         />
       </div>
 
-      <div className="mt-4 flex items-center gap-4 text-sm">
+      <div className="flex items-center gap-4 mt-4 text-sm">
         <ShareButton path={sharePath} title={p.name} />
         <WishlistButton productId={p.id} />
       </div>
@@ -206,7 +85,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
       <hr className="my-6 border-neutral-200" />
 
       <div className="flex gap-8 text-sm font-medium">
-        <a href="#description" className="border-b-2 border-neutral-900 pb-2">
+        <a href="#description" className="pb-2 border-b-2 border-neutral-900">
           Mô tả sản phẩm
         </a>
         <a
@@ -219,7 +98,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
 
       {/* MÔ TẢ – hỗ trợ Markdown */}
       <div id="description" className="mt-4">
-        <div className="relative text-sm text-neutral-700 leading-7">
+        <div className="relative text-sm leading-7 text-neutral-700">
           <div
             className={
               expanded
@@ -233,10 +112,10 @@ export default function ProductInfoSection({ product }: { product: P }) {
                   <p className="whitespace-pre-wrap" {...props} />
                 ),
                 ul: ({ node, ...props }) => (
-                  <ul className="ml-5 list-disc space-y-1" {...props} />
+                  <ul className="ml-5 space-y-1 list-disc" {...props} />
                 ),
                 ol: ({ node, ...props }) => (
-                  <ol className="ml-5 list-decimal space-y-1" {...props} />
+                  <ol className="ml-5 space-y-1 list-decimal" {...props} />
                 ),
                 li: ({ node, ...props }) => <li {...props} />,
               }}
@@ -246,7 +125,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
           </div>
 
           {!expanded && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-12 pointer-events-none bg-gradient-to-t from-white to-transparent" />
           )}
         </div>
 
@@ -263,35 +142,37 @@ export default function ProductInfoSection({ product }: { product: P }) {
       {/* ĐẶC ĐIỂM / THÔNG SỐ – hỗ trợ Markdown ở phần value */}
       <div id="specifications" className="mt-8">
         {p.specs && p.specs.length > 0 ? (
-          <div className="overflow-hidden rounded-md border">
+          <div className="overflow-hidden border rounded-md">
             {p.specs.map((s, i) => (
               <div
                 key={i}
-                className="grid grid-cols-2 border-b text-sm last:border-b-0"
+                className="grid grid-cols-2 text-sm border-b last:border-b-0"
               >
-                <div className="bg-neutral-50 px-4 py-3">{s.label}</div>
-                <div className="px-4 py-3">
-                  <ReactMarkdown
-                    className="space-y-1 text-neutral-800"
-                    components={{
-                      p: ({ node, ...props }) => (
-                        <p className="whitespace-pre-wrap" {...props} />
-                      ),
-                      ul: ({ node, ...props }) => (
-                        <ul className="ml-4 list-disc space-y-0.5" {...props} />
-                      ),
-                      ol: ({ node, ...props }) => (
-                        <ol
-                          className="ml-4 list-decimal space-y-0.5"
-                          {...props}
-                        />
-                      ),
-                      li: ({ node, ...props }) => <li {...props} />,
-                    }}
-                  >
-                    {s.value}
-                  </ReactMarkdown>
-                </div>
+                <div className="px-4 py-3 bg-neutral-50">{s.label}</div>
+             <div className="px-4 py-3">
+  <div className="space-y-1 text-neutral-800">
+    <ReactMarkdown
+      components={{
+        p: ({ node, ...props }) => (
+          <p className="whitespace-pre-wrap" {...props} />
+        ),
+        ul: ({ node, ...props }) => (
+          <ul className="ml-4 list-disc space-y-0.5" {...props} />
+        ),
+        ol: ({ node, ...props }) => (
+          <ol
+            className="ml-4 list-decimal space-y-0.5"
+            {...props}
+          />
+        ),
+        li: ({ node, ...props }) => <li {...props} />,
+      }}
+    >
+      {s.value}
+    </ReactMarkdown>
+  </div>
+</div>
+
               </div>
             ))}
           </div>

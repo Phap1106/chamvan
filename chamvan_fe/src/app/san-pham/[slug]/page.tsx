@@ -19,8 +19,8 @@ export type UIProduct = {
 };
 
 // --- Config ---
-const BASE = "https://api.chamvan.com/api";
-
+// const BASE = "https://api.chamvan.com/api";
+const BASE = "http://localhost:4000/api";
 // --- Helper: Chuẩn hóa URL ảnh từ API (Fix lỗi không hiển thị gallery) ---
 function getImages(root: any): string[] {
   const list: string[] = [];
@@ -147,8 +147,8 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
       </div>
 
       {/* Phần Gợi ý */}
-      <div className="mt-24 border-t border-gray-100 pt-16">
-        <h2 className="text-2xl font-semibold mb-8 text-gray-900 tracking-tight">
+      <div className="pt-16 mt-24 border-t border-gray-100">
+        <h2 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900">
           Có thể bạn cũng thích
         </h2>
 
@@ -158,7 +158,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
               <a 
                 key={p.id} 
                 href={`/san-pham/${p.slug || p.id}`} 
-                className="group block"
+                className="block group"
               >
                 <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 mb-4 border border-gray-100">
                   <Image
@@ -170,7 +170,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <h3 className="text-sm font-medium text-gray-900 line-clamp-2 leading-relaxed group-hover:text-blue-700 transition-colors">
+                  <h3 className="text-sm font-medium leading-relaxed text-gray-900 transition-colors line-clamp-2 group-hover:text-blue-700">
                     {p.name}
                   </h3>
                   <div className="text-sm font-bold text-gray-900">
@@ -181,7 +181,7 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500 italic">Chưa có sản phẩm gợi ý phù hợp.</p>
+          <p className="text-sm italic text-gray-500">Chưa có sản phẩm gợi ý phù hợp.</p>
         )}
       </div>
     </div>
