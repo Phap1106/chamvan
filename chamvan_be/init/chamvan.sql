@@ -155,7 +155,7 @@ CREATE TABLE `orders` (
   `eta` datetime DEFAULT NULL,
   `userId` int(11) DEFAULT NULL,
   `ip_address` VARCHAR(64) NULL,
-  `user_agent` VARCHAR(255) NULL;
+  `user_agent` VARCHAR(255) NULL,
   `createdAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updatedAt` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   PRIMARY KEY (`id`)
@@ -168,8 +168,7 @@ CREATE TABLE `orders` (
 
 LOCK TABLES `orders` WRITE;
 /*!40000 ALTER TABLE `orders` DISABLE KEYS */;
-INSERT INTO `orders` VALUES (1,'Nguyen Van A','a@example.com','0900000000',NULL,'123 Nguyen Trai, Q1',NULL,0,0,0,'confirmed',NULL,NULL,'2025-11-03 11:52:40.021369','2025-11-03 11:53:31.000000'),(2,'Anh Đẹp Trai','guest@example.com','0988675443',NULL,'26 sơn la, Xã Má Lé, Huyện Đồng Văn, Tỉnh Hà Giang','Đóng gói cẩn thận giúp mình | Lên đơn ngay nhé',0,0,0,'chờ duyệt',NULL,NULL,'2025-11-03 12:17:58.472142','2025-11-03 12:17:58.472142'),(3,'Ấda ádasd','guest@example.com','08080898787',NULL,'2453, Phường Tứ Liên, Quận Tây Hồ, Thành phố Hà Nội','giao nhanh ok | Đóng gói cẩn thận giúp mình | Giao giờ hành chính',0,0,0,'chờ duyệt',NULL,NULL,'2025-11-03 15:10:10.898274','2025-11-03 15:10:10.898274'),(5,'âdsasad','khachhang2@gmail.com','089898989',NULL,'ádad, Xã Thượng Hà, Huyện Bảo Lạc, Tỉnh Cao Bằng','Đóng gói cẩn thận giúp mình | Lên đơn ngay nhé | Giao giờ hành chính',0,0,0,'đang chuẩn bị','2025-11-05 17:34:00',NULL,'2025-11-03 17:05:01.047135','2025-11-19 17:34:41.000000'),(6,'Nguyen Van A','admin@gmail.com','02342324243',NULL,'Ngo 901, Xã Đa Thông, Huyện Thông Nông, Tỉnh Cao Bằng','Giao vao buoi sang | Đóng gói cẩn thận giúp mình | Lên đơn ngay nhé | Giao giờ hành chính',13500000,0,13500000,'duyệt','2025-11-20 12:01:00',NULL,'2025-11-11 18:00:55.173875','2025-11-11 18:01:44.000000'),(7,'Nam trần','guest@example.com','009349539045',NULL,'xóm 1, Phường Hàng Buồm, Quận Hoàn Kiếm, Thành phố Hà Nội','Đóng gói cẩn thận giúp mình | Giao giờ hành chính',4500000,0,4500000,'chờ duyệt',NULL,NULL,'2025-11-19 17:35:28.464914','2025-11-19 17:35:28.464914');
-/*!40000 ALTER TABLE `orders` ENABLE KEYS */;
+
 UNLOCK TABLES;
 
 --
