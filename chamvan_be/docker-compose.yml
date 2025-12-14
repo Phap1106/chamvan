@@ -44,7 +44,7 @@ services:
     depends_on:
       - db
     ports:
-     - "4000:4000"
+     - "5113:4000"
     networks:
       - chamvan-net
 
