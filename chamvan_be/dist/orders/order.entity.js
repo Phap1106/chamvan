@@ -28,6 +28,8 @@ let Order = class Order {
     eta;
     userId;
     items;
+    ipAddress;
+    userAgent;
     createdAt;
     updatedAt;
 };
@@ -103,6 +105,14 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => order_item_entity_1.OrderItem, (i) => i.order, { cascade: false }),
     __metadata("design:type", Array)
 ], Order.prototype, "items", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'ip_address', nullable: true, length: 64 }),
+    __metadata("design:type", String)
+], Order.prototype, "ipAddress", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'user_agent', nullable: true, type: 'text' }),
+    __metadata("design:type", String)
+], Order.prototype, "userAgent", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

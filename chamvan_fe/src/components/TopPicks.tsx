@@ -4,12 +4,12 @@
 import Image, { StaticImageData } from 'next/image';
 
 import pick1 from '@/app/img/topics/t1.jpg';
-import pick2 from '@/app/img/topics/t2.jpg';
-import pick3 from '@/app/img/topics/t6.jpg';
-import pick4 from '@/app/img/topics/t7.jpg';
-import pick5 from '@/app/img/topics/t5.jpg';
-import pick6 from '@/app/img/topics/t8.jpg';
-import pick7 from '@/app/img/topics/t9.jpg';
+import pick2 from '@/app/img/topics/tp/t2.jpg';
+import pick3 from '@/app/img/topics/tp/t10.jpg';
+import pick4 from '@/app/img/topics/tp/t7.jpg';
+import pick5 from '@/app/img/topics/tp/t3.jpg';
+import pick6 from '@/app/img/topics/tp/t4.jpg';
+import pick7 from '@/app/img/topics/tp/t9.jpg';
 
 type PickItem = {
   type: 'color' | 'image';
@@ -66,14 +66,7 @@ function Tile({ item, idx, variant }: TileProps) {
       >
         {/* mặt trước */}
         <div
-          className="
-            absolute inset-0
-            flex items-center justify-center
-            px-6 sm:px-8
-            transition-all duration-500
-            group-hover:opacity-0
-            group-hover:-translate-y-3
-          "
+          className="absolute inset-0 flex items-center justify-center px-6 transition-all duration-500 sm:px-8 group-hover:opacity-0 group-hover:-translate-y-3"
         >
           <span
             className={`
@@ -170,29 +163,11 @@ function Tile({ item, idx, variant }: TileProps) {
 
       {/* overlay + text khi hover */}
       <div
-        className="
-          pointer-events-none
-          absolute inset-0
-          bg-gradient-to-t from-black/70 via-black/25 to-transparent
-          opacity-0
-          group-hover:opacity-100
-          transition-opacity
-          duration-300
-        "
+        className="absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none bg-gradient-to-t from-black/70 via-black/25 to-transparent group-hover:opacity-100"
       />
 
       <div
-        className="
-          pointer-events-none
-          absolute inset-x-0 bottom-0 z-10
-          p-4 sm:p-5
-          opacity-0
-          translate-y-4
-          group-hover:opacity-100
-          group-hover:translate-y-0
-          transition-all
-          duration-300
-        "
+        className="absolute inset-x-0 bottom-0 z-10 p-4 transition-all duration-300 translate-y-4 opacity-0 pointer-events-none sm:p-5 group-hover:opacity-100 group-hover:translate-y-0"
       >
         <div className="max-w-xs text-white">
           <p className="text-[10px] tracking-[0.18em] uppercase text-white/80">
@@ -341,7 +316,7 @@ export default function TopPicks() {
 
   return (
     <section className="w-full pt-16 pb-16 md:pt-24 md:pb-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+      <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-10">
         {/* header */}
         <div className="mb-10 text-center md:mb-16">
           <p className="text-[11px] tracking-[0.25em] uppercase text-zinc-400">
@@ -350,20 +325,16 @@ export default function TopPicks() {
           <h2 className="mt-3 text-2xl font-semibold tracking-wide md:text-4xl">
             SẢN PHẨM BÁN CHẠY
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm text-zinc-500 md:text-base">
+          <p className="max-w-2xl mx-auto mt-3 text-sm text-zinc-500 md:text-base">
             Một vài gợi ý giúp bạn hình dung nhanh kích thước, vị trí đặt và cách
             ứng dụng các dòng sản phẩm Chạm Vân trong không gian sống.
           </p>
         </div>
 
         {/* MOBILE: chỉ ảnh, kéo ngang */}
-        <div className="md:hidden -mx-4 px-4">
+        <div className="px-4 -mx-4 md:hidden">
           <div
-            className="
-              flex gap-4 overflow-x-auto pb-3
-              snap-x snap-mandatory
-              scrollbar-thin scrollbar-thumb-neutral-300 scrollbar-track-transparent
-            "
+            className="flex gap-4 pb-3 overflow-x-auto snap-x snap-mandatory scrollbar-thin scrollbar-thumb-neutral-300 scrollbar-track-transparent"
           >
             {imageItems.map((item, idx) => (
               <Tile

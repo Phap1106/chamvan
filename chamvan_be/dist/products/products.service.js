@@ -21,6 +21,17 @@ const product_image_entity_1 = require("./product-image.entity");
 const product_color_entity_1 = require("./product-color.entity");
 const product_spec_entity_1 = require("./product-spec.entity");
 const category_entity_1 = require("../categories/category.entity");
+function slugify(input) {
+    return input
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'd')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .replace(/-{2,}/g, '-');
+}
 let ProductsService = class ProductsService {
     repo;
     imgRepo;
@@ -111,7 +122,10 @@ let ProductsService = class ProductsService {
         const anyDto = input;
         const id = input.id ? Number(input.id) : undefined;
         const name = String(input.name ?? '').trim();
-        const slug = this.normalizeSlug(undefined, name);
+        let slugSource = anyDto.slug ? String(anyDto.slug).trim() : '';
+        if (!slugSource && name)
+            slugSource = name;
+        const slug = slugSource ? slugify(slugSource) : undefined;
         const rawImages = Array.isArray(anyDto.images) ? anyDto.images : [];
         const uniqueImages = [
             ...new Set(rawImages

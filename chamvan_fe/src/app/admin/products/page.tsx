@@ -1,9 +1,8 @@
-// // //src/app/admin/products/page.tsx
-
+// //src/app/admin/products/page.tsx
 // 'use client';
 
 // import React, { useEffect, useMemo, useRef, useState } from 'react';
-// import { 
+// import {
 //   Search, Plus, X, Trash2, Edit3, Eye, Image as ImageIcon, Package, Layers, Tag
 // } from 'lucide-react';
 // import { toast } from 'sonner';
@@ -11,20 +10,20 @@
 // /* ================== TYPES & UTILS ================== */
 // type Color = { name: string; hex?: string };
 // type Spec = { label: string; value: string };
-// type Variant = { name: string; price: number; stock: number; sku?: string }; 
+// type Variant = { name: string; price: number; stock: number; sku?: string };
 
 // type Product = {
 //   id?: number | string;
 //   name: string;
 //   slug: string;
-//   price: number; 
+//   price: number;
 //   sku?: string;
 //   description?: string;
 //   image?: string;
 //   images?: string[];
 //   colors?: Color[];
 //   specs?: Spec[];
-//   variants?: Variant[]; 
+//   variants?: Variant[];
 //   categories?: Array<{ id: number; name: string; slug: string }>;
 //   stock?: number;
 //   sold?: number;
@@ -34,44 +33,39 @@
 // type Category = { id: number; name: string; slug: string };
 // type LocalGallery = { url: string; kind: 'url' | 'file'; file?: File };
 
-// const slugify = (s: string) =>
-//   s
-//     .toLowerCase()
-//     .normalize('NFD')
-//     .replace(/[\u0300-\u036f]/g, '')
-//     .replace(/đ/g, 'd')
-//     .replace(/[^a-z0-9]+/g, '-')
-//     .replace(/^-+|-+$/g, '')   // bỏ '-' đầu/cuối
-//     .replace(/-{2,}/g, '-')    // gộp -- thành -
-//     .slice(0, 120);
-
 // const formatVND = (n: number) => new Intl.NumberFormat('vi-VN').format(n);
 // const parseDigits = (s: string) => Number(s.replace(/[^\d]/g, '')) || 0;
 
 // const normalizeImages = (imagesRaw: any): string[] => {
-//     if (!imagesRaw || !Array.isArray(imagesRaw)) return [];
-//     return imagesRaw.map((i: any) => {
-//             if (typeof i === 'string') return i.trim();
-//             if (i && typeof i.url === 'string') return i.url.trim(); 
-//             return '';
-//         }).filter(Boolean);
+//   if (!imagesRaw || !Array.isArray(imagesRaw)) return [];
+//   return imagesRaw
+//     .map((i: any) => {
+//       if (typeof i === 'string') return i.trim();
+//       if (i && typeof i.url === 'string') return i.url.trim();
+//       return '';
+//     })
+//     .filter(Boolean);
 // };
 
 // /* ================== UI COMPONENTS (FIXED) ================== */
 // const Button = ({ variant = 'primary', className, ...props }: any) => {
-//   const base = "inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors rounded-md focus:outline-none disabled:opacity-50 h-10";
-//   const variants: Record<string, string> = { // Sử dụng Record<string, string> để tránh lỗi TS phức tạp
-//     primary: "bg-zinc-900 text-white hover:bg-zinc-800",
-//     secondary: "bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50",
-//     danger: "bg-red-600 text-white hover:bg-red-700",
-//     ghost: "hover:bg-zinc-100 text-zinc-600",
+//   const base =
+//     'inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors rounded-md focus:outline-none disabled:opacity-50 h-10';
+//   const variants: Record<string, string> = {
+//     primary: 'bg-zinc-900 text-white hover:bg-zinc-800',
+//     secondary: 'bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50',
+//     danger: 'bg-red-600 text-white hover:bg-red-700',
+//     ghost: 'hover:bg-zinc-100 text-zinc-600',
 //   };
-//   const variantClass = variants[variant] || variants.primary; // Lấy class tương ứng
+//   const variantClass = variants[variant] || variants.primary;
 //   return <button className={`${base} ${variantClass} ${className}`} {...props} />;
 // };
 
 // const Input = (props: any) => (
-//   <input className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent" {...props} />
+//   <input
+//     className="flex w-full h-10 px-3 py-2 text-sm bg-white border rounded-md border-zinc-300 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+//     {...props}
+//   />
 // );
 
 // const Label = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
@@ -80,13 +74,25 @@
 //   </label>
 // );
 
-// const Badge = ({ children, color = 'zinc' }: { children: React.ReactNode; color?: 'zinc' | 'green' | 'red' }) => {
+// const Badge = ({
+//   children,
+//   color = 'zinc',
+// }: {
+//   children: React.ReactNode;
+//   color?: 'zinc' | 'green' | 'red';
+// }) => {
 //   const colors = {
-//     zinc: "bg-zinc-100 text-zinc-800 border-zinc-200",
-//     green: "bg-emerald-50 text-emerald-700 border-emerald-200",
-//     red: "bg-rose-50 text-rose-700 border-rose-200",
+//     zinc: 'bg-zinc-100 text-zinc-800 border-zinc-200',
+//     green: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+//     red: 'bg-rose-50 text-rose-700 border-rose-200',
 //   };
-//   return <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-semibold border ${colors[color]} border-opacity-50`}>{children}</span>;
+//   return (
+//     <span
+//       className={`inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-semibold border ${colors[color]} border-opacity-50`}
+//     >
+//       {children}
+//     </span>
+//   );
 // };
 
 // function PriceInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -95,9 +101,13 @@
 //   return (
 //     <input
 //       inputMode="numeric"
-//       className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+//       className="flex w-full h-10 px-3 py-2 text-sm bg-white border rounded-md border-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-900"
 //       value={raw}
-//       onChange={(e) => { const n = parseDigits(e.target.value); setRaw(new Intl.NumberFormat('vi-VN').format(n)); onChange(n); }}
+//       onChange={(e) => {
+//         const n = parseDigits(e.target.value);
+//         setRaw(new Intl.NumberFormat('vi-VN').format(n));
+//         onChange(n);
+//       }}
 //       onBlur={() => setRaw(formatVND(value))}
 //     />
 //   );
@@ -111,32 +121,55 @@
 //   function add() {
 //     if (!name.trim()) return;
 //     let finalHex = hex.trim();
-//     if (finalHex && !finalHex.startsWith('#')) { finalHex = '#' + finalHex; }
+//     if (finalHex && !finalHex.startsWith('#')) {
+//       finalHex = '#' + finalHex;
+//     }
 //     onChange([...(value || []), { name: name.trim(), hex: finalHex }]);
-//     setName(''); setHex('');
+//     setName('');
+//     setHex('');
 //   }
 //   function removeIdx(idx: number) {
-//     const n = [...value]; n.splice(idx, 1); onChange(n);
+//     const n = [...value];
+//     n.splice(idx, 1);
+//     onChange(n);
 //   }
 //   return (
-//     <div className="p-4 border border-zinc-200 rounded-md bg-white space-y-3">
+//     <div className="p-4 space-y-3 bg-white border rounded-md border-zinc-200">
 //       <Label>Màu sắc</Label>
 //       <div className="flex gap-2 mb-3">
 //         <Input placeholder="Tên màu" value={name} onChange={(e) => setName(e.target.value)} />
-//         <Input placeholder="#hex" value={hex} onChange={(e) => setHex(e.target.value)} className="w-24" />
-//         <Button onClick={add} variant="secondary">Thêm</Button>
+//         <Input
+//           placeholder="#hex"
+//           value={hex}
+//           onChange={(e) => setHex(e.target.value)}
+//           className="w-24"
+//         />
+//         <Button onClick={add} variant="secondary">
+//           Thêm
+//         </Button>
 //       </div>
-//       <ul className="space-y-1 text-sm max-h-28 overflow-y-auto">
+//       <ul className="space-y-1 overflow-y-auto text-sm max-h-28">
 //         {value?.map((c, i) => (
-//           <li key={`${c.name}-${i}`} className="flex items-center justify-between bg-zinc-50 p-2 rounded">
-//             <span className="truncate flex items-center gap-2">
-//               <span className="w-3 h-3 rounded-full ring-1 ring-zinc-300" style={{ background: c.hex || '#eee' }} />
+//           <li
+//             key={`${c.name}-${i}`}
+//             className="flex items-center justify-between p-2 rounded bg-zinc-50"
+//           >
+//             <span className="flex items-center gap-2 truncate">
+//               <span
+//                 className="w-3 h-3 rounded-full ring-1 ring-zinc-300"
+//                 style={{ background: c.hex || '#eee' }}
+//               />
 //               {c.name} {c.hex && <span className="text-xs text-zinc-500">({c.hex})</span>}
 //             </span>
-//             <button className="text-red-500 hover:bg-red-50 p-0.5 rounded" onClick={() => removeIdx(i)}><Trash2 size={14}/></button>
+//             <button
+//               className="text-red-500 hover:bg-red-50 p-0.5 rounded"
+//               onClick={() => removeIdx(i)}
+//             >
+//               <Trash2 size={14} />
+//             </button>
 //           </li>
 //         ))}
-//         {!value?.length && <li className="text-xs text-zinc-400 py-2">Chưa có màu</li>}
+//         {!value?.length && <li className="py-2 text-xs text-zinc-400">Chưa có màu</li>}
 //       </ul>
 //     </div>
 //   );
@@ -148,27 +181,52 @@
 //   function add() {
 //     if (!label.trim() || !val.trim()) return;
 //     onChange([...(value || []), { label: label.trim(), value: val.trim() }]);
-//     setLabel(''); setVal('');
+//     setLabel('');
+//     setVal('');
 //   }
 //   function removeIdx(i: number) {
-//     const n = [...value]; n.splice(i, 1); onChange(n);
+//     const n = [...value];
+//     n.splice(i, 1);
+//     onChange(n);
 //   }
 //   return (
-//     <div className="p-4 border border-zinc-200 rounded-md bg-white space-y-3">
+//     <div className="p-4 space-y-3 bg-white border rounded-md border-zinc-200">
 //       <Label>Thông số kỹ thuật</Label>
 //       <div className="grid grid-cols-3 gap-2 mb-3">
-//         <Input placeholder="Nhãn" value={label} onChange={(e) => setLabel(e.target.value)} className="col-span-1" />
-//         <Input placeholder="Giá trị" value={val} onChange={(e) => setVal(e.target.value)} className="col-span-2" />
-//         <Button onClick={add} variant="secondary" className="col-span-3">Thêm thông số</Button>
+//         <Input
+//           placeholder="Nhãn"
+//           value={label}
+//           onChange={(e) => setLabel(e.target.value)}
+//           className="col-span-1"
+//         />
+//         <Input
+//           placeholder="Giá trị"
+//           value={val}
+//           onChange={(e) => setVal(e.target.value)}
+//           className="col-span-2"
+//         />
+//         <Button onClick={add} variant="secondary" className="col-span-3">
+//           Thêm thông số
+//         </Button>
 //       </div>
-//       <ul className="space-y-1 text-sm max-h-28 overflow-y-auto">
+//       <ul className="space-y-1 overflow-y-auto text-sm max-h-28">
 //         {value?.map((s, i) => (
-//           <li key={`${s.label}-${i}`} className="flex items-center justify-between bg-zinc-50 p-2 rounded">
-//             <span className="truncate">{s.label}: <span className="text-gray-600">{s.value}</span></span>
-//             <button className="text-red-500 hover:bg-red-50 p-0.5 rounded" onClick={() => removeIdx(i)}><Trash2 size={14}/></button>
+//           <li
+//             key={`${s.label}-${i}`}
+//             className="flex items-center justify-between p-2 rounded bg-zinc-50"
+//           >
+//             <span className="truncate">
+//               {s.label}: <span className="text-gray-600">{s.value}</span>
+//             </span>
+//             <button
+//               className="text-red-500 hover:bg-red-50 p-0.5 rounded"
+//               onClick={() => removeIdx(i)}
+//             >
+//               <Trash2 size={14} />
+//             </button>
 //           </li>
 //         ))}
-//         {!value?.length && <li className="text-xs text-zinc-400 py-2">Chưa có thông số</li>}
+//         {!value?.length && <li className="py-2 text-xs text-zinc-400">Chưa có thông số</li>}
 //       </ul>
 //     </div>
 //   );
@@ -181,54 +239,99 @@
 //   const [vSku, setVSku] = useState('');
 
 //   function add() {
-//     if (!vName.trim()) return toast.error("Nhập tên biến thể (VD: Size L)");
-//     if (vPrice <= 0) return toast.error("Giá phải lớn hơn 0");
-    
+//     if (!vName.trim()) return toast.error('Nhập tên biến thể (VD: Size L)');
+//     if (vPrice <= 0) return toast.error('Giá phải lớn hơn 0');
+
 //     onChange([...value, { name: vName, price: vPrice, stock: vStock, sku: vSku }]);
-//     setVName(''); setVPrice(0); setVStock(0); setVSku('');
+//     setVName('');
+//     setVPrice(0);
+//     setVStock(0);
+//     setVSku('');
 //   }
 
 //   function removeIdx(idx: number) {
-//     const n = [...value]; n.splice(idx, 1); onChange(n);
+//     const n = [...value];
+//     n.splice(idx, 1);
+//     onChange(n);
 //   }
 
 //   return (
 //     <div className="space-y-4">
-//       <div className="grid grid-cols-12 gap-2 items-end border border-zinc-200 p-3 rounded-lg bg-white shadow-sm">
-//         <div className="col-span-4"><Label>Tên biến thể</Label><Input placeholder="Màu Đỏ - Size L" value={vName} onChange={(e) => setVName(e.target.value)} /></div>
-//         <div className="col-span-3"><Label>Giá tiền</Label><PriceInput value={vPrice} onChange={setVPrice} /></div>
-//         <div className="col-span-2"><Label>Kho</Label><Input type="number" value={vStock} onChange={(e) => setVStock(Number(e.target.value))} /></div>
-//         <div className="col-span-2"><Label>SKU (Opt)</Label><Input value={vSku} onChange={(e) => setVSku(e.target.value)} /></div>
-//         <div className="col-span-1"><Button onClick={add} className="w-full bg-blue-600 hover:bg-blue-700 text-white px-0 h-10"><Plus size={18}/></Button></div>
+//       <div className="grid items-end grid-cols-12 gap-2 p-3 bg-white border rounded-lg shadow-sm border-zinc-200">
+//         <div className="col-span-4">
+//           <Label>Tên biến thể</Label>
+//           <Input
+//             placeholder="Màu Đỏ - Size L"
+//             value={vName}
+//             onChange={(e) => setVName(e.target.value)}
+//           />
+//         </div>
+//         <div className="col-span-3">
+//           <Label>Giá tiền</Label>
+//           <PriceInput value={vPrice} onChange={setVPrice} />
+//         </div>
+//         <div className="col-span-2">
+//           <Label>Kho</Label>
+//           <Input
+//             type="number"
+//             value={vStock}
+//             onChange={(e) => setVStock(Number(e.target.value))}
+//           />
+//         </div>
+//         <div className="col-span-2">
+//           <Label>SKU (Opt)</Label>
+//           <Input value={vSku} onChange={(e) => setVSku(e.target.value)} />
+//         </div>
+//         <div className="col-span-1">
+//           <Button
+//             onClick={add}
+//             className="w-full h-10 px-0 text-white bg-blue-600 hover:bg-blue-700"
+//           >
+//             <Plus size={18} />
+//           </Button>
+//         </div>
 //       </div>
 
-//       <div className="space-y-2 max-h-60 overflow-y-auto">
+//       <div className="space-y-2 overflow-y-auto max-h-60">
 //         {value.map((v, idx) => (
-//           <div key={idx} className="flex items-center justify-between bg-white p-3 rounded border shadow-sm">
-//              <div>
-//                 <div className="font-medium text-sm">{v.name}</div>
-//                 <div className="text-xs text-gray-500">SKU: {v.sku || '—'}</div>
-//              </div>
-//              <div className="flex items-center gap-4 text-sm">
-//                 <span className="font-semibold text-emerald-600">{formatVND(v.price)} ₫</span>
-//                 <span className="text-gray-600">Kho: {v.stock}</span>
-//                 <button onClick={() => removeIdx(idx)} className="text-red-500 hover:bg-red-50 p-1 rounded"><Trash2 size={16}/></button>
-//              </div>
+//           <div
+//             key={idx}
+//             className="flex items-center justify-between p-3 bg-white border rounded shadow-sm"
+//           >
+//             <div>
+//               <div className="text-sm font-medium">{v.name}</div>
+//               <div className="text-xs text-gray-500">SKU: {v.sku || '—'}</div>
+//             </div>
+//             <div className="flex items-center gap-4 text-sm">
+//               <span className="font-semibold text-emerald-600">
+//                 {formatVND(v.price)} ₫
+//               </span>
+//               <span className="text-gray-600">Kho: {v.stock}</span>
+//               <button
+//                 onClick={() => removeIdx(idx)}
+//                 className="p-1 text-red-500 rounded hover:bg-red-50"
+//               >
+//                 <Trash2 size={16} />
+//               </button>
+//             </div>
 //           </div>
 //         ))}
-//         {value.length === 0 && <div className="text-center text-sm text-zinc-400 py-2 border rounded-lg">Chưa có biến thể nào.</div>}
+//         {value.length === 0 && (
+//           <div className="py-2 text-sm text-center border rounded-lg text-zinc-400">
+//             Chưa có biến thể nào.
+//           </div>
+//         )}
 //       </div>
 //     </div>
 //   );
 // }
-
 
 // /* ================== MAIN PAGE ================== */
 // export default function AdminProductsPage() {
 //   const [list, setList] = useState<Product[]>([]);
 //   const [allCats, setAllCats] = useState<Category[]>([]);
 //   const [loading, setLoading] = useState(true);
-  
+
 //   const [q, setQ] = useState('');
 //   const [catF, setCatF] = useState<number | 'all'>('all');
 //   const [statusF, setStatusF] = useState<'all' | 'open' | 'closed'>('all');
@@ -236,13 +339,12 @@
 //   const [showDrawer, setShowDrawer] = useState(false);
 //   const [editing, setEditing] = useState<Product | null>(null);
 //   const [viewing, setViewing] = useState<Product | null>(null);
-  
+
 //   const [gallery, setGallery] = useState<LocalGallery[]>([]);
 //   const [selectedCatIds, setSelectedCatIds] = useState<number[]>([]);
 //   const [saving, setSaving] = useState(false);
-//   const [slugTouched, setSlugTouched] = useState(false);
 //   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
-  
+
 //   const urlInputRef = useRef<HTMLInputElement>(null);
 
 //   useEffect(() => {
@@ -259,7 +361,7 @@
 //       const arr = Array.isArray(data) ? data : data?.items || [];
 //       const items = arr.map((p: any) => {
 //         const images = normalizeImages(p.images);
-        
+
 //         const displayPrice = Number(p.price || 0);
 //         const totalStock = Number(p.stock || 0);
 
@@ -269,7 +371,9 @@
 //           stock: totalStock,
 //           images,
 //           image: p.image || images[0] || '',
-//           categories: Array.isArray(p.categories) ? p.categories.map((c:any) => ({ id: Number(c.id), name: c.name, slug: c.slug })) : [],
+//           categories: Array.isArray(p.categories)
+//             ? p.categories.map((c: any) => ({ id: Number(c.id), name: c.name, slug: c.slug }))
+//             : [],
 //           status: p.status === 'closed' ? 'closed' : 'open',
 //           description: p.description || '',
 //           colors: p.colors || [],
@@ -278,27 +382,55 @@
 //         };
 //       });
 //       setList(items);
-//     } catch (e) { toast.error("Lỗi tải danh sách sản phẩm"); }
+//     } catch (e) {
+//       toast.error('Lỗi tải danh sách sản phẩm');
+//     }
 //   }
 
 //   async function loadCategories() {
 //     try {
 //       const res = await fetch('/api/admin/categories');
 //       const data = await res.json();
-//       setAllCats((Array.isArray(data) ? data : data.items || []).map((c:any) => ({ id: Number(c.id), name: c.name, slug: c.slug })));
+//       setAllCats(
+//         (Array.isArray(data) ? data : data.items || []).map((c: any) => ({
+//           id: Number(c.id),
+//           name: c.name,
+//           slug: c.slug,
+//         })),
+//       );
 //     } catch {}
 //   }
 
 //   const openEditor = (p?: Product) => {
 //     if (p) {
-//       setEditing({ ...p, colors: p.colors || [], specs: p.specs || [], variants: p.variants || [] });
-//       setSelectedCatIds((p.categories || []).map(c => Number(c.id)));
-//       const existingImages = p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : []);
-//       setGallery(existingImages.map(url => ({ url, kind: 'url' })));
-//       setSlugTouched(true);
+//       setEditing({
+//         ...p,
+//         colors: p.colors || [],
+//         specs: p.specs || [],
+//         variants: p.variants || [],
+//       });
+//       setSelectedCatIds((p.categories || []).map((c) => Number(c.id)));
+//       const existingImages =
+//         p.images && p.images.length > 0 ? p.images : p.image ? [p.image] : [];
+//       setGallery(existingImages.map((url) => ({ url, kind: 'url' })));
 //     } else {
-//       setEditing({ name: '', slug: '', price: 0, sku: '', description: '', image: '', images: [], stock: 0, sold: 0, status: 'open', colors: [], specs: [], variants: [] });
-//       setSelectedCatIds([]); setGallery([]); setSlugTouched(false);
+//       setEditing({
+//         name: '',
+//         slug: '',
+//         price: 0,
+//         sku: '',
+//         description: '',
+//         image: '',
+//         images: [],
+//         stock: 0,
+//         sold: 0,
+//         status: 'open',
+//         colors: [],
+//         specs: [],
+//         variants: [],
+//       });
+//       setSelectedCatIds([]);
+//       setGallery([]);
 //     }
 //     setShowDrawer(true);
 //   };
@@ -306,65 +438,109 @@
 //   const handleSave = async () => {
 //     if (!editing || !editing.name) return toast.error('Tên sản phẩm là bắt buộc');
 //     setSaving(true);
-    
-//     const finalImages = gallery.map(g => g.url);
-    
+
+//     const finalImages = gallery.map((g) => g.url);
+
+//     // KHÔNG gửi slug lên BE – để BE tự sinh / giữ
+//     const { slug, ...restEditing } = editing as any;
+
 //     const payload = {
-//       ...editing,
-//       slug: editing.slug || slugify(editing.name),
-//       price: String(editing.price), 
+//       ...restEditing,
+//       price: String(editing.price),
 //       stock: Number(editing.stock),
 //       image: finalImages[0] || '',
 //       images: finalImages,
 //       categories: selectedCatIds,
 //       colors: editing.colors,
 //       specs: editing.specs,
-//       variants: undefined // KHÔNG GỬI VARIANTS
+//       variants: undefined, // KHÔNG GỬI VARIANTS
 //     };
 
 //     try {
 //       const url = editing.id ? `/api/admin/products/${editing.id}` : '/api/admin/products';
 //       const method = editing.id ? 'PATCH' : 'POST';
-//       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+//       const res = await fetch(url, {
+//         method,
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify(payload),
+//       });
 //       if (!res.ok) throw new Error();
-//       await loadProducts(); setShowDrawer(false); toast.success('Lưu thành công');
-//     } catch { toast.error('Lưu thất bại'); } 
-//     finally { setSaving(false); }
+//       await loadProducts();
+//       setShowDrawer(false);
+//       toast.success('Lưu thành công');
+//     } catch {
+//       toast.error('Lưu thất bại');
+//     } finally {
+//       setSaving(false);
+//     }
 //   };
 
 //   const handleDelete = async () => {
 //     if (!confirmDelete?.id) return;
 //     await fetch(`/api/admin/products/${confirmDelete.id}`, { method: 'DELETE' });
-//     setList(prev => prev.filter(p => p.id !== confirmDelete.id));
+//     setList((prev) => prev.filter((p) => p.id !== confirmDelete.id));
 //     setConfirmDelete(null);
 //     toast.success('Đã xóa');
 //   };
 
 //   const filtered = useMemo(() => {
 //     const lowerQ = q.toLowerCase();
-//     return list.filter(p => (!q || p.name.toLowerCase().includes(lowerQ) || p.sku?.toLowerCase().includes(lowerQ)) && (catF === 'all' || p.categories?.some(c => c.id === catF)));
+//     return list.filter(
+//       (p) =>
+//         (!q ||
+//           p.name.toLowerCase().includes(lowerQ) ||
+//           p.sku?.toLowerCase().includes(lowerQ)) &&
+//         (catF === 'all' || p.categories?.some((c) => c.id === catF)),
+//     );
 //   }, [list, q, catF]);
 
 //   return (
-//     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20">
-//       <header className="bg-white border-b border-zinc-200 sticky top-0 z-20">
-//         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-//           <h1 className="text-lg font-bold tracking-tight text-zinc-900 flex items-center gap-2">
-//             📦 Quản lý sản phẩm <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-xs text-zinc-600">{list.length}</span>
+//     <div className="min-h-screen pb-20 font-sans bg-zinc-50 text-zinc-900">
+//       <header className="sticky top-0 z-20 bg-white border-b border-zinc-200">
+//         <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl">
+//           <h1 className="flex items-center gap-2 text-lg font-bold tracking-tight text-zinc-900">
+//             📦 Quản lý sản phẩm{' '}
+//             <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-xs text-zinc-600">
+//               {list.length}
+//             </span>
 //           </h1>
-//           <Button onClick={() => openEditor()} className="shadow-sm"><Plus size={16} /> Thêm mới</Button>
+//           <Button onClick={() => openEditor()} className="shadow-sm">
+//             <Plus size={16} /> Thêm mới
+//           </Button>
 //         </div>
-//         <div className="max-w-7xl mx-auto px-4 pb-4 flex flex-col md:flex-row gap-3">
+//         <div className="flex flex-col gap-3 px-4 pb-4 mx-auto max-w-7xl md:flex-row">
 //           <div className="relative flex-1">
-//             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-//             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm kiếm tên, mã SKU..." className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-200 rounded-md text-sm focus:ring-2 focus:ring-zinc-900 outline-none" />
+//             <Search
+//               className="absolute -translate-y-1/2 left-3 top-1/2 text-zinc-400"
+//               size={16}
+//             />
+//             <input
+//               value={q}
+//               onChange={(e) => setQ(e.target.value)}
+//               placeholder="Tìm kiếm tên, mã SKU..."
+//               className="w-full py-2 pr-4 text-sm border rounded-md outline-none pl-9 bg-zinc-50 border-zinc-200 focus:ring-2 focus:ring-zinc-900"
+//             />
 //           </div>
 //           <div className="flex gap-2">
-//             <select value={catF} onChange={e => setCatF(e.target.value === 'all' ? 'all' : Number(e.target.value))} className="h-9 px-3 bg-white border border-zinc-200 rounded-md text-sm outline-none">
+//             <select
+//               value={catF}
+//               onChange={(e) =>
+//                 setCatF(e.target.value === 'all' ? 'all' : Number(e.target.value))
+//               }
+//               className="px-3 text-sm bg-white border rounded-md outline-none h-9 border-zinc-200"
+//             >
 //               <option value="all">Tất cả danh mục</option>
-//               {allCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+//               {allCats.map((c) => (
+//                 <option key={c.id} value={c.id}>
+//                   {c.name}
+//                 </option>
+//               ))}
 //             </select>
-//             <select value={statusF} onChange={e => setStatusF(e.target.value as any)} className="h-9 px-3 bg-white border border-zinc-200 rounded-md text-sm outline-none">
+//             <select
+//               value={statusF}
+//               onChange={(e) => setStatusF(e.target.value as any)}
+//               className="px-3 text-sm bg-white border rounded-md outline-none h-9 border-zinc-200"
+//             >
 //               <option value="all">Tất cả trạng thái</option>
 //               <option value="open">Đang bán</option>
 //               <option value="closed">Ngưng bán</option>
@@ -373,13 +549,17 @@
 //         </div>
 //       </header>
 
-//       <main className="max-w-7xl mx-auto px-4 py-6">
-//         {loading ? <div className="text-center py-20 text-zinc-400 animate-pulse">Đang tải dữ liệu...</div> : (
-//           <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden shadow-sm">
+//       <main className="px-4 py-6 mx-auto max-w-7xl">
+//         {loading ? (
+//           <div className="py-20 text-center text-zinc-400 animate-pulse">
+//             Đang tải dữ liệu...
+//           </div>
+//         ) : (
+//           <div className="overflow-hidden bg-white border rounded-lg shadow-sm border-zinc-200">
 //             <table className="w-full text-sm text-left">
-//               <thead className="bg-zinc-50 border-b border-zinc-200 text-xs uppercase text-zinc-500 font-semibold">
+//               <thead className="text-xs font-semibold uppercase border-b bg-zinc-50 border-zinc-200 text-zinc-500">
 //                 <tr>
-//                   <th className="px-4 py-3 w-16">Image</th>
+//                   <th className="w-16 px-4 py-3">Image</th>
 //                   <th className="px-4 py-3">Sản phẩm</th>
 //                   <th className="px-4 py-3 text-right">Giá bán</th>
 //                   <th className="px-4 py-3 text-center">Kho</th>
@@ -388,25 +568,66 @@
 //                 </tr>
 //               </thead>
 //               <tbody className="divide-y divide-zinc-100">
-//                 {filtered.map(p => (
-//                   <tr key={p.id} className="hover:bg-zinc-50/50 transition-colors group">
+//                 {filtered.map((p) => (
+//                   <tr
+//                     key={p.id}
+//                     className="transition-colors hover:bg-zinc-50/50 group"
+//                   >
 //                     <td className="px-4 py-3">
-//                       <div className="w-10 h-10 rounded bg-zinc-100 border border-zinc-200 overflow-hidden">
-//                          <img src={p.image || '/placeholder.jpg'} alt="" className="w-full h-full object-cover" onError={e => e.currentTarget.src='/placeholder.jpg'} />
+//                       <div className="w-10 h-10 overflow-hidden border rounded bg-zinc-100 border-zinc-200">
+//                         <img
+//                           src={p.image || '/placeholder.jpg'}
+//                           alt=""
+//                           className="object-cover w-full h-full"
+//                           onError={(e) => (e.currentTarget.src = '/placeholder.jpg')}
+//                         />
 //                       </div>
 //                     </td>
 //                     <td className="px-4 py-3 font-medium text-zinc-900">
-//                       <div className="truncate max-w-[300px]" title={p.name}>{p.name}</div>
-//                       <div className="text-xs text-zinc-400 font-mono">{p.sku}</div>
+//                       <div
+//                         className="truncate max-w-[300px]"
+//                         title={p.name}
+//                       >
+//                         {p.name}
+//                       </div>
+//                       <div className="font-mono text-xs text-zinc-400">
+//                         {p.sku}
+//                       </div>
 //                     </td>
-//                     <td className="px-4 py-3 text-right font-medium">{formatVND(p.price)}</td>
-//                     <td className="px-4 py-3 text-center text-xs">{p.stock}</td>
-//                     <td className="px-4 py-3"><Badge color={p.status === 'open' ? 'green' : 'zinc'}>{p.status === 'open' ? 'Bán' : 'Ẩn'}</Badge></td>
+//                     <td className="px-4 py-3 font-medium text-right">
+//                       {formatVND(p.price)}
+//                     </td>
+//                     <td className="px-4 py-3 text-xs text-center">
+//                       {p.stock}
+//                     </td>
+//                     <td className="px-4 py-3">
+//                       <Badge color={p.status === 'open' ? 'green' : 'zinc'}>
+//                         {p.status === 'open' ? 'Bán' : 'Ẩn'}
+//                       </Badge>
+//                     </td>
 //                     <td className="px-4 py-3 text-right">
-//                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-//                         <button onClick={() => setViewing(p)} className="p-1.5 hover:bg-zinc-100 rounded text-zinc-600" title="Xem"><Eye size={14}/></button>
-//                         <button onClick={() => openEditor(p)} className="p-1.5 hover:bg-zinc-100 rounded text-zinc-600" title="Sửa"><Edit3 size={14}/></button>
-//                         <button onClick={() => setConfirmDelete(p)} className="p-1.5 hover:bg-red-50 rounded text-red-600" title="Xóa"><Trash2 size={14}/></button>
+//                       <div className="flex items-center justify-end gap-1 transition-opacity opacity-0 group-hover:opacity-100">
+//                         <button
+//                           onClick={() => setViewing(p)}
+//                           className="p-1.5 hover:bg-zinc-100 rounded text-zinc-600"
+//                           title="Xem"
+//                         >
+//                           <Eye size={14} />
+//                         </button>
+//                         <button
+//                           onClick={() => openEditor(p)}
+//                           className="p-1.5 hover:bg-zinc-100 rounded text-zinc-600"
+//                           title="Sửa"
+//                         >
+//                           <Edit3 size={14} />
+//                         </button>
+//                         <button
+//                           onClick={() => setConfirmDelete(p)}
+//                           className="p-1.5 hover:bg-red-50 rounded text-red-600"
+//                           title="Xóa"
+//                         >
+//                           <Trash2 size={14} />
+//                         </button>
 //                       </div>
 //                     </td>
 //                   </tr>
@@ -419,125 +640,363 @@
 
 //       {viewing && (
 //         <div className="fixed inset-0 z-50 flex justify-end">
-//           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setViewing(null)} />
-//           <div className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+//           <div
+//             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+//             onClick={() => setViewing(null)}
+//           />
+//           <div className="relative flex flex-col w-full h-full max-w-lg duration-300 bg-white shadow-2xl animate-in slide-in-from-right">
 //             <div className="flex items-center justify-between px-6 py-4 border-b">
 //               <h2 className="text-lg font-bold">Chi tiết sản phẩm</h2>
-//               <button onClick={() => setViewing(null)}><X size={20}/></button>
+//               <button onClick={() => setViewing(null)}>
+//                 <X size={20} />
+//               </button>
 //             </div>
-//             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-//               <div className="aspect-square bg-zinc-100 rounded-lg overflow-hidden border"><img src={viewing.image || '/placeholder.jpg'} className="w-full h-full object-cover" alt="" /></div>
-//               <div>
-//                 <h3 className="text-xl font-bold text-zinc-900">{viewing.name}</h3>
-//                 <div className="text-lg font-semibold text-emerald-600 mt-1">{formatVND(viewing.price)} ₫</div>
-//               </div>
-//               <div className="space-y-2 text-sm text-zinc-600 bg-zinc-50 p-4 rounded-lg border">
-//                  <div className="flex justify-between"><span>Slug:</span> <span className="font-mono">{viewing.slug}</span></div>
-//                  <div className="flex justify-between"><span>SKU:</span> <span>{viewing.sku || '—'}</span></div>
-//                  <div className="flex justify-between"><span>Kho:</span> <b>{viewing.stock}</b></div>
-//                  <div className="flex justify-between"><span>Đã bán:</span> <b>{viewing.sold}</b></div>
+//             <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+//               <div className="overflow-hidden border rounded-lg aspect-square bg-zinc-100">
+//                 <img
+//                   src={viewing.image || '/placeholder.jpg'}
+//                   className="object-cover w-full h-full"
+//                   alt=""
+//                 />
 //               </div>
 //               <div>
-//                  <h4 className="font-bold text-sm mb-2 uppercase text-zinc-500">Mô tả</h4>
-//                  <div className="text-sm text-zinc-700 whitespace-pre-wrap bg-white p-3 border rounded-md min-h-[100px]">
-//                     {viewing.description || 'Chưa có mô tả'}
-//                  </div>
+//                 <h3 className="text-xl font-bold text-zinc-900">
+//                   {viewing.name}
+//                 </h3>
+//                 <div className="mt-1 text-lg font-semibold text-emerald-600">
+//                   {formatVND(viewing.price)} ₫
+//                 </div>
+//               </div>
+//               <div className="p-4 space-y-2 text-sm border rounded-lg text-zinc-600 bg-zinc-50">
+//                 <div className="flex justify-between">
+//                   <span>Slug:</span>{' '}
+//                   <span className="font-mono">{viewing.slug}</span>
+//                 </div>
+//                 <div className="flex justify-between">
+//                   <span>SKU:</span> <span>{viewing.sku || '—'}</span>
+//                 </div>
+//                 <div className="flex justify-between">
+//                   <span>Kho:</span> <b>{viewing.stock}</b>
+//                 </div>
+//                 <div className="flex justify-between">
+//                   <span>Đã bán:</span> <b>{viewing.sold}</b>
+//                 </div>
+//               </div>
+//               <div>
+//                 <h4 className="mb-2 text-sm font-bold uppercase text-zinc-500">
+//                   Mô tả
+//                 </h4>
+//                 <div className="text-sm text-zinc-700 whitespace-pre-wrap bg-white p-3 border rounded-md min-h-[100px]">
+//                   {viewing.description || 'Chưa có mô tả'}
+//                 </div>
 //               </div>
 //             </div>
-//             <div className="p-4 border-t bg-zinc-50 flex justify-end">
-//                <Button onClick={() => { openEditor(viewing); setViewing(null); }}>Chỉnh sửa</Button>
+//             <div className="flex justify-end p-4 border-t bg-zinc-50">
+//               <Button
+//                 onClick={() => {
+//                   openEditor(viewing);
+//                   setViewing(null);
+//                 }}
+//               >
+//                 Chỉnh sửa
+//               </Button>
 //             </div>
 //           </div>
 //         </div>
 //       )}
-      
+
 //       {showDrawer && editing && (
 //         <div className="fixed inset-0 z-50 flex justify-end">
-//           <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowDrawer(false)} />
-//           <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300" onClick={e => e.stopPropagation()}>
-//             <div className="flex items-center justify-between px-6 py-4 border-b bg-white sticky top-0 z-10">
-//               <h2 className="text-lg font-bold text-zinc-900">{editing.id ? 'Chỉnh sửa' : 'Thêm mới'}</h2>
-//               <button onClick={() => setShowDrawer(false)} className="p-2 hover:bg-zinc-100 rounded-full"><X size={20}/></button>
+//           <div
+//             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+//             onClick={() => setShowDrawer(false)}
+//           />
+//           <div
+//             className="relative flex flex-col w-full h-full max-w-2xl duration-300 bg-white shadow-2xl animate-in slide-in-from-right"
+//             onClick={(e) => e.stopPropagation()}
+//           >
+//             <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white border-b">
+//               <h2 className="text-lg font-bold text-zinc-900">
+//                 {editing.id ? 'Chỉnh sửa' : 'Thêm mới'}
+//               </h2>
+//               <button
+//                 onClick={() => setShowDrawer(false)}
+//                 className="p-2 rounded-full hover:bg-zinc-100"
+//               >
+//                 <X size={20} />
+//               </button>
 //             </div>
-//             <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-zinc-50/50">
+//             <div className="flex-1 p-6 space-y-8 overflow-y-auto bg-zinc-50/50">
 //               <section className="space-y-4">
-//                 <div className="flex items-center gap-2 pb-2 border-b"><Package size={18}/><h3 className="font-bold">Thông tin</h3></div>
+//                 <div className="flex items-center gap-2 pb-2 border-b">
+//                   <Package size={18} />
+//                   <h3 className="font-bold">Thông tin</h3>
+//                 </div>
 //                 <div className="grid gap-4">
-//                   <div><Label required>Tên sản phẩm</Label><Input value={editing.name} onChange={(e:any) => setEditing(prev => ({ ...prev!, name: e.target.value, slug: slugTouched ? prev!.slug : slugify(e.target.value) }))} /></div>
-//                   <div className="grid grid-cols-2 gap-4">
-//                      <div><Label>Giá bán (VNĐ)</Label><PriceInput value={editing.price} onChange={(v) => setEditing({...editing!, price: v})} /></div>
-//                      <div><Label>Mã SKU</Label><Input value={editing.sku || ''} onChange={(e:any) => setEditing({...editing!, sku: e.target.value})} /></div>
+//                   <div>
+//                     <Label required>Tên sản phẩm</Label>
+//                     <Input
+//                       value={editing.name}
+//                       onChange={(e: any) =>
+//                         setEditing((prev) => ({ ...prev!, name: e.target.value }))
+//                       }
+//                     />
 //                   </div>
-//                   <div><Label>Slug</Label><Input value={editing.slug} onChange={(e:any) => { setSlugTouched(true); setEditing({...editing!, slug: slugify(e.target.value)}) }} /></div>
-//                   <div><Label>Mô tả</Label><textarea className="w-full p-3 text-sm border border-zinc-300 rounded-md bg-white min-h-[120px]" value={editing.description || ''} onChange={e => setEditing({...editing!, description: e.target.value})} /></div>
+//                   <div className="grid grid-cols-2 gap-4">
+//                     <div>
+//                       <Label>Giá bán (VNĐ)</Label>
+//                       <PriceInput
+//                         value={editing.price}
+//                         onChange={(v) =>
+//                           setEditing({ ...(editing as Product), price: v })
+//                         }
+//                       />
+//                     </div>
+//                     <div>
+//                       <Label>Mã SKU</Label>
+//                       <Input
+//                         value={editing.sku || ''}
+//                         onChange={(e: any) =>
+//                           setEditing({ ...(editing as Product), sku: e.target.value })
+//                         }
+//                       />
+//                     </div>
+//                   </div>
+//                   <div>
+//                     <Label>Slug (tự sinh từ server)</Label>
+//                     <Input
+//                       value={editing.slug || ''}
+//                       readOnly
+//                       disabled
+//                       placeholder="Sẽ được tạo sau khi lưu"
+//                     />
+//                   </div>
+//                   <div>
+//                     <Label>Mô tả</Label>
+//                     <textarea
+//                       className="w-full p-3 text-sm border border-zinc-300 rounded-md bg-white min-h-[120px]"
+//                       value={editing.description || ''}
+//                       onChange={(e) =>
+//                         setEditing({
+//                           ...(editing as Product),
+//                           description: e.target.value,
+//                         })
+//                       }
+//                     />
+//                   </div>
 //                 </div>
 //               </section>
 
 //               <section className="space-y-4">
-//                  <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2"><Layers size={18}/><h3 className="font-bold">Phân loại hàng</h3></h3>
-//                  {/* Logic giá/kho đơn (ĐÃ KHÔI PHỤC) */}
-//                  <div className="grid grid-cols-2 gap-4 bg-white p-3 rounded border">
-//                     <div><Label>Tồn kho</Label><Input type="number" value={editing.stock} onChange={(e:any) => setEditing({...editing!, stock: Number(e.target.value)})} /></div>
-//                     <div><Label>Đã bán</Label><Input type="number" value={editing.sold} onChange={(e:any) => setEditing({...editing!, sold: Number(e.target.value)})} /></div>
-//                  </div>
-//               </section>
-
-//               <section className="space-y-4">
-//                  <div className="flex items-center gap-2 pb-2 border-b"><Tag size={18}/><h3 className="font-bold">Thuộc tính & Màu sắc</h3></div>
-//                  <div className="grid md:grid-cols-2 gap-6">
-//                    <ColorsEditor value={editing.colors || []} onChange={(colors) => setEditing({ ...(editing as Product), colors })} />
-//                    <SpecsEditor value={editing.specs || []} onChange={(specs) => setEditing({ ...(editing as Product), specs })} />
-//                  </div>
-//               </section>
-
-//               <section className="space-y-4">
-//                  <h3 className="flex items-center gap-2 pb-2 border-b"><ImageIcon size={18}/><h3 className="font-bold">Hình ảnh</h3></h3>
-//                 <div className="flex gap-2 mb-3">
-//                    <input ref={urlInputRef} className="flex-1 h-10 px-3 text-sm border border-zinc-300 rounded-md bg-white" placeholder="Dán URL ảnh..." />
-//                    <Button variant="secondary" onClick={() => {
-//                       if(urlInputRef.current?.value) {
-//                          const urls = urlInputRef.current.value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
-//                          setGallery(prev => [...prev, ...urls.map(u => ({ url: u, kind: 'url' as const }))]);
-//                          urlInputRef.current.value = '';
+//                 <h3 className="flex items-center gap-2 text-sm font-bold text-zinc-900">
+//                   <Layers size={18} />
+//                   <h3 className="font-bold">Phân loại hàng</h3>
+//                 </h3>
+//                 <div className="grid grid-cols-2 gap-4 p-3 bg-white border rounded">
+//                   <div>
+//                     <Label>Tồn kho</Label>
+//                     <Input
+//                       type="number"
+//                       value={editing.stock}
+//                       onChange={(e: any) =>
+//                         setEditing({
+//                           ...(editing as Product),
+//                           stock: Number(e.target.value),
+//                         })
 //                       }
-//                    }}>Thêm</Button>
+//                     />
+//                   </div>
+//                   <div>
+//                     <Label>Đã bán</Label>
+//                     <Input
+//                       type="number"
+//                       value={editing.sold}
+//                       onChange={(e: any) =>
+//                         setEditing({
+//                           ...(editing as Product),
+//                           sold: Number(e.target.value),
+//                         })
+//                       }
+//                     />
+//                   </div>
+//                 </div>
+//               </section>
+
+//               <section className="space-y-4">
+//                 <div className="flex items-center gap-2 pb-2 border-b">
+//                   <Tag size={18} />
+//                   <h3 className="font-bold">Thuộc tính & Màu sắc</h3>
+//                 </div>
+//                 <div className="grid gap-6 md:grid-cols-2">
+//                   <ColorsEditor
+//                     value={editing.colors || []}
+//                     onChange={(colors) =>
+//                       setEditing({ ...(editing as Product), colors })
+//                     }
+//                   />
+//                   <SpecsEditor
+//                     value={editing.specs || []}
+//                     onChange={(specs) =>
+//                       setEditing({ ...(editing as Product), specs })
+//                     }
+//                   />
+//                 </div>
+//               </section>
+
+//               <section className="space-y-4">
+//                 <h3 className="flex items-center gap-2 pb-2 border-b">
+//                   <ImageIcon size={18} />
+//                   <h3 className="font-bold">Hình ảnh</h3>
+//                 </h3>
+//                 <div className="flex gap-2 mb-3">
+//                   <input
+//                     ref={urlInputRef}
+//                     className="flex-1 h-10 px-3 text-sm bg-white border rounded-md border-zinc-300"
+//                     placeholder="Dán URL ảnh..."
+//                   />
+//                   <Button
+//                     variant="secondary"
+//                     onClick={() => {
+//                       if (urlInputRef.current?.value) {
+//                         const urls = urlInputRef.current.value
+//                           .split(/[\n,]+/)
+//                           .map((s) => s.trim())
+//                           .filter(Boolean);
+//                         setGallery((prev) => [
+//                           ...prev,
+//                           ...urls.map((u) => ({ url: u, kind: 'url' as const })),
+//                         ]);
+//                         urlInputRef.current.value = '';
+//                       }
+//                     }}
+//                   >
+//                     Thêm
+//                   </Button>
 //                 </div>
 //                 <div className="grid grid-cols-4 gap-3">
 //                   {gallery.map((g, i) => (
-//                     <div key={i} className="relative group aspect-square bg-white rounded-md overflow-hidden border border-zinc-200">
-//                       <img src={g.url} alt="" className="w-full h-full object-cover" onError={e => e.currentTarget.style.display='none'} />
-//                       <button onClick={() => setGallery(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 bg-white/90 text-red-500 p-1 rounded opacity-0 group-hover:opacity-100"><Trash2 size={14}/></button>
-//                       {i === 0 && <div className="absolute bottom-0 w-full bg-black/50 text-white text-[10px] text-center">Ảnh chính</div>}
+//                     <div
+//                       key={i}
+//                       className="relative overflow-hidden bg-white border rounded-md group aspect-square border-zinc-200"
+//                     >
+//                       <img
+//                         src={g.url}
+//                         alt=""
+//                         className="object-cover w-full h-full"
+//                         onError={(e) => (e.currentTarget.style.display = 'none')}
+//                       />
+//                       <button
+//                         onClick={() =>
+//                           setGallery((prev) => prev.filter((_, idx) => idx !== i))
+//                         }
+//                         className="absolute p-1 text-red-500 rounded opacity-0 top-1 right-1 bg-white/90 group-hover:opacity-100"
+//                       >
+//                         <Trash2 size={14} />
+//                       </button>
+//                       {i === 0 && (
+//                         <div className="absolute bottom-0 w-full bg-black/50 text-white text-[10px] text-center">
+//                           Ảnh chính
+//                         </div>
+//                       )}
 //                     </div>
 //                   ))}
 //                 </div>
 //               </section>
 
 //               <section className="space-y-4">
-//                  <h3 className="flex items-center gap-2 pb-2 border-b"><Layers size={18}/><h3 className="font-bold">Danh mục</h3></h3>
-//                  <div className="space-y-2">
-//                     <div className="max-h-40 overflow-y-auto border border-zinc-300 rounded-md p-2 bg-white">
-//                          {allCats.map(c => (
-//                             <label key={c.id} className="flex items-center gap-2 p-1.5 hover:bg-zinc-50 rounded cursor-pointer text-sm select-none">
-//                                <input type="checkbox" checked={selectedCatIds.includes(c.id)} onChange={() => setSelectedCatIds(prev => prev.includes(c.id) ? prev.filter(i => i !== c.id) : [...prev, c.id])} className="rounded border-zinc-300 accent-zinc-900" />
-//                                {c.name}
-//                             </label>
-//                          ))}
-//                       </div>
-//                       <div className="grid grid-cols-2 gap-3">
-//                          <div><Label>Trạng thái</Label><select value={editing.status} onChange={e => setEditing({...editing!, status: e.target.value as any})} className="w-full h-10 px-3 border border-zinc-300 rounded-md text-sm bg-white"><option value="open">Đang bán</option><option value="closed">Ngưng bán</option></select></div>
-//                          <div><Label>SKU Gốc (Tùy chọn)</Label><Input value={editing.sku || ''} onChange={(e:any) => setEditing({...editing!, sku: e.target.value})} placeholder="Mã SKU chung" /></div>
-//                       </div>
-//                       <div className="grid grid-cols-2 gap-3">
-//                          <div><Label>Tồn kho Chung</Label><Input type="number" value={editing.stock} onChange={(e:any) => setEditing({...editing!, stock: Number(e.target.value)})} /></div>
-//                          <div><Label>Đã bán Chung</Label><Input type="number" value={editing.sold} onChange={(e:any) => setEditing({...editing!, sold: Number(e.target.value)})} /></div>
-//                       </div>
-//                    </div>
+//                 <h3 className="flex items-center gap-2 pb-2 border-b">
+//                   <Layers size={18} />
+//                   <h3 className="font-bold">Danh mục</h3>
+//                 </h3>
+//                 <div className="space-y-2">
+//                   <div className="p-2 overflow-y-auto bg-white border rounded-md max-h-40 border-zinc-300">
+//                     {allCats.map((c) => (
+//                       <label
+//                         key={c.id}
+//                         className="flex items-center gap-2 p-1.5 hover:bg-zinc-50 rounded cursor-pointer text-sm select-none"
+//                       >
+//                         <input
+//                           type="checkbox"
+//                           checked={selectedCatIds.includes(c.id)}
+//                           onChange={() =>
+//                             setSelectedCatIds((prev) =>
+//                               prev.includes(c.id)
+//                                 ? prev.filter((i) => i !== c.id)
+//                                 : [...prev, c.id],
+//                             )
+//                           }
+//                           className="rounded border-zinc-300 accent-zinc-900"
+//                         />
+//                         {c.name}
+//                       </label>
+//                     ))}
+//                   </div>
+//                   <div className="grid grid-cols-2 gap-3">
+//                     <div>
+//                       <Label>Trạng thái</Label>
+//                       <select
+//                         value={editing.status}
+//                         onChange={(e) =>
+//                           setEditing({
+//                             ...(editing as Product),
+//                             status: e.target.value as any,
+//                           })
+//                         }
+//                         className="w-full h-10 px-3 text-sm bg-white border rounded-md border-zinc-300"
+//                       >
+//                         <option value="open">Đang bán</option>
+//                         <option value="closed">Ngưng bán</option>
+//                       </select>
+//                     </div>
+//                     <div>
+//                       <Label>SKU Gốc (Tùy chọn)</Label>
+//                       <Input
+//                         value={editing.sku || ''}
+//                         onChange={(e: any) =>
+//                           setEditing({ ...(editing as Product), sku: e.target.value })
+//                         }
+//                         placeholder="Mã SKU chung"
+//                       />
+//                     </div>
+//                   </div>
+//                   <div className="grid grid-cols-2 gap-3">
+//                     <div>
+//                       <Label>Tồn kho Chung</Label>
+//                       <Input
+//                         type="number"
+//                         value={editing.stock}
+//                         onChange={(e: any) =>
+//                           setEditing({
+//                             ...(editing as Product),
+//                             stock: Number(e.target.value),
+//                           })
+//                         }
+//                       />
+//                     </div>
+//                     <div>
+//                       <Label>Đã bán Chung</Label>
+//                       <Input
+//                         type="number"
+//                         value={editing.sold}
+//                         onChange={(e: any) =>
+//                           setEditing({
+//                             ...(editing as Product),
+//                             sold: Number(e.target.value),
+//                           })
+//                         }
+//                       />
+//                     </div>
+//                   </div>
+//                 </div>
 //               </section>
 //             </div>
-//             <div className="p-4 border-t border-zinc-200 bg-white flex items-center justify-end gap-3">
-//               <Button variant="ghost" onClick={() => setShowDrawer(false)}>Hủy bỏ</Button>
-//               <Button onClick={handleSave} disabled={saving}>{saving ? 'Đang lưu...' : 'Lưu lại'}</Button>
+//             <div className="flex items-center justify-end gap-3 p-4 bg-white border-t border-zinc-200">
+//               <Button variant="ghost" onClick={() => setShowDrawer(false)}>
+//                 Hủy bỏ
+//               </Button>
+//               <Button onClick={handleSave} disabled={saving}>
+//                 {saving ? 'Đang lưu...' : 'Lưu lại'}
+//               </Button>
 //             </div>
 //           </div>
 //         </div>
@@ -545,11 +1004,15 @@
 
 //       {confirmDelete && (
 //         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
-//           <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
-//             <h3 className="text-lg font-bold text-zinc-900 mb-2">Xác nhận xóa?</h3>
+//           <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-xl">
+//             <h3 className="mb-2 text-lg font-bold text-zinc-900">Xác nhận xóa?</h3>
 //             <div className="flex justify-end gap-3 mt-6">
-//               <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Hủy</Button>
-//               <Button variant="danger" onClick={handleDelete}>Xóa ngay</Button>
+//               <Button variant="secondary" onClick={() => setConfirmDelete(null)}>
+//                 Hủy
+//               </Button>
+//               <Button variant="danger" onClick={handleDelete}>
+//                 Xóa ngay
+//               </Button>
 //             </div>
 //           </div>
 //         </div>
@@ -557,7 +1020,6 @@
 //     </div>
 //   );
 // }
-
 
 
 
@@ -576,7 +1038,18 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Search, Plus, X, Trash2, Edit3, Eye, Image as ImageIcon, Package, Layers, Tag
+  Search,
+  Plus,
+  X,
+  Trash2,
+  Edit3,
+  Eye,
+  Image as ImageIcon,
+  Package,
+  Layers,
+  Tag,
+  Copy,
+  Upload,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -604,7 +1077,7 @@ type Product = {
 };
 
 type Category = { id: number; name: string; slug: string };
-type LocalGallery = { url: string; kind: 'url' | 'file'; file?: File };
+type LocalGallery = { url: string; kind: 'url' | 'file' };
 
 const formatVND = (n: number) => new Intl.NumberFormat('vi-VN').format(n);
 const parseDigits = (s: string) => Number(s.replace(/[^\d]/g, '')) || 0;
@@ -620,7 +1093,50 @@ const normalizeImages = (imagesRaw: any): string[] => {
     .filter(Boolean);
 };
 
-/* ================== UI COMPONENTS (FIXED) ================== */
+const IMG_RE = /^(https?:\/\/|data:image\/)/i;
+
+// ✅ nén ảnh trước khi convert base64 để tránh payload nổ
+async function compressToDataUrl(file: File, maxW = 1600, quality = 0.85): Promise<string> {
+  const readAsDataUrl = (f: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ''));
+      r.onerror = reject;
+      r.readAsDataURL(f);
+    });
+
+  // nếu file nhỏ thì giữ nguyên
+  if (file.size <= 400 * 1024) {
+    return await readAsDataUrl(file);
+  }
+
+  const dataUrl = await readAsDataUrl(file);
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = reject;
+    im.src = dataUrl;
+  });
+
+  const ratio = Math.min(1, maxW / (img.width || maxW));
+  const w = Math.max(1, Math.round((img.width || maxW) * ratio));
+  const h = Math.max(1, Math.round((img.height || maxW) * ratio));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return dataUrl;
+
+  ctx.drawImage(img, 0, 0, w, h);
+
+  // ưu tiên jpeg để giảm dung lượng
+  const out = canvas.toDataURL('image/jpeg', quality);
+  return out;
+}
+
+/* ================== UI COMPONENTS ================== */
 const Button = ({ variant = 'primary', className, ...props }: any) => {
   const base =
     'inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors rounded-md focus:outline-none disabled:opacity-50 h-10';
@@ -636,7 +1152,7 @@ const Button = ({ variant = 'primary', className, ...props }: any) => {
 
 const Input = (props: any) => (
   <input
-    className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+    className="flex w-full h-10 px-3 py-2 text-sm bg-white border rounded-md border-zinc-300 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
     {...props}
   />
 );
@@ -674,7 +1190,7 @@ function PriceInput({ value, onChange }: { value: number; onChange: (v: number) 
   return (
     <input
       inputMode="numeric"
-      className="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900"
+      className="flex w-full h-10 px-3 py-2 text-sm bg-white border rounded-md border-zinc-300 focus:outline-none focus:ring-2 focus:ring-zinc-900"
       value={raw}
       onChange={(e) => {
         const n = parseDigits(e.target.value);
@@ -686,17 +1202,14 @@ function PriceInput({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
-// === HELPER EDITORS ===
-
+/* ================== HELPER EDITORS ================== */
 function ColorsEditor({ value, onChange }: { value: Color[]; onChange: (v: Color[]) => void }) {
   const [name, setName] = useState('');
   const [hex, setHex] = useState('');
   function add() {
     if (!name.trim()) return;
     let finalHex = hex.trim();
-    if (finalHex && !finalHex.startsWith('#')) {
-      finalHex = '#' + finalHex;
-    }
+    if (finalHex && !finalHex.startsWith('#')) finalHex = '#' + finalHex;
     onChange([...(value || []), { name: name.trim(), hex: finalHex }]);
     setName('');
     setHex('');
@@ -707,42 +1220,26 @@ function ColorsEditor({ value, onChange }: { value: Color[]; onChange: (v: Color
     onChange(n);
   }
   return (
-    <div className="p-4 border border-zinc-200 rounded-md bg-white space-y-3">
+    <div className="p-4 space-y-3 bg-white border rounded-md border-zinc-200">
       <Label>Màu sắc</Label>
       <div className="flex gap-2 mb-3">
         <Input placeholder="Tên màu" value={name} onChange={(e) => setName(e.target.value)} />
-        <Input
-          placeholder="#hex"
-          value={hex}
-          onChange={(e) => setHex(e.target.value)}
-          className="w-24"
-        />
-        <Button onClick={add} variant="secondary">
-          Thêm
-        </Button>
+        <Input placeholder="#hex" value={hex} onChange={(e) => setHex(e.target.value)} className="w-24" />
+        <Button onClick={add} variant="secondary">Thêm</Button>
       </div>
-      <ul className="space-y-1 text-sm max-h-28 overflow-y-auto">
+      <ul className="space-y-1 overflow-y-auto text-sm max-h-28">
         {value?.map((c, i) => (
-          <li
-            key={`${c.name}-${i}`}
-            className="flex items-center justify-between bg-zinc-50 p-2 rounded"
-          >
-            <span className="truncate flex items-center gap-2">
-              <span
-                className="w-3 h-3 rounded-full ring-1 ring-zinc-300"
-                style={{ background: c.hex || '#eee' }}
-              />
+          <li key={`${c.name}-${i}`} className="flex items-center justify-between p-2 rounded bg-zinc-50">
+            <span className="flex items-center gap-2 truncate">
+              <span className="w-3 h-3 rounded-full ring-1 ring-zinc-300" style={{ background: c.hex || '#eee' }} />
               {c.name} {c.hex && <span className="text-xs text-zinc-500">({c.hex})</span>}
             </span>
-            <button
-              className="text-red-500 hover:bg-red-50 p-0.5 rounded"
-              onClick={() => removeIdx(i)}
-            >
+            <button className="text-red-500 hover:bg-red-50 p-0.5 rounded" onClick={() => removeIdx(i)}>
               <Trash2 size={14} />
             </button>
           </li>
         ))}
-        {!value?.length && <li className="text-xs text-zinc-400 py-2">Chưa có màu</li>}
+        {!value?.length && <li className="py-2 text-xs text-zinc-400">Chưa có màu</li>}
       </ul>
     </div>
   );
@@ -763,138 +1260,26 @@ function SpecsEditor({ value, onChange }: { value: Spec[]; onChange: (v: Spec[])
     onChange(n);
   }
   return (
-    <div className="p-4 border border-zinc-200 rounded-md bg-white space-y-3">
+    <div className="p-4 space-y-3 bg-white border rounded-md border-zinc-200">
       <Label>Thông số kỹ thuật</Label>
       <div className="grid grid-cols-3 gap-2 mb-3">
-        <Input
-          placeholder="Nhãn"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          className="col-span-1"
-        />
-        <Input
-          placeholder="Giá trị"
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          className="col-span-2"
-        />
-        <Button onClick={add} variant="secondary" className="col-span-3">
-          Thêm thông số
-        </Button>
+        <Input placeholder="Nhãn" value={label} onChange={(e) => setLabel(e.target.value)} className="col-span-1" />
+        <Input placeholder="Giá trị" value={val} onChange={(e) => setVal(e.target.value)} className="col-span-2" />
+        <Button onClick={add} variant="secondary" className="col-span-3">Thêm thông số</Button>
       </div>
-      <ul className="space-y-1 text-sm max-h-28 overflow-y-auto">
+      <ul className="space-y-1 overflow-y-auto text-sm max-h-28">
         {value?.map((s, i) => (
-          <li
-            key={`${s.label}-${i}`}
-            className="flex items-center justify-between bg-zinc-50 p-2 rounded"
-          >
+          <li key={`${s.label}-${i}`} className="flex items-center justify-between p-2 rounded bg-zinc-50">
             <span className="truncate">
               {s.label}: <span className="text-gray-600">{s.value}</span>
             </span>
-            <button
-              className="text-red-500 hover:bg-red-50 p-0.5 rounded"
-              onClick={() => removeIdx(i)}
-            >
+            <button className="text-red-500 hover:bg-red-50 p-0.5 rounded" onClick={() => removeIdx(i)}>
               <Trash2 size={14} />
             </button>
           </li>
         ))}
-        {!value?.length && <li className="text-xs text-zinc-400 py-2">Chưa có thông số</li>}
+        {!value?.length && <li className="py-2 text-xs text-zinc-400">Chưa có thông số</li>}
       </ul>
-    </div>
-  );
-}
-
-function VariantsEditor({ value, onChange }: { value: Variant[]; onChange: (v: Variant[]) => void }) {
-  const [vName, setVName] = useState('');
-  const [vPrice, setVPrice] = useState(0);
-  const [vStock, setVStock] = useState(0);
-  const [vSku, setVSku] = useState('');
-
-  function add() {
-    if (!vName.trim()) return toast.error('Nhập tên biến thể (VD: Size L)');
-    if (vPrice <= 0) return toast.error('Giá phải lớn hơn 0');
-
-    onChange([...value, { name: vName, price: vPrice, stock: vStock, sku: vSku }]);
-    setVName('');
-    setVPrice(0);
-    setVStock(0);
-    setVSku('');
-  }
-
-  function removeIdx(idx: number) {
-    const n = [...value];
-    n.splice(idx, 1);
-    onChange(n);
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-12 gap-2 items-end border border-zinc-200 p-3 rounded-lg bg-white shadow-sm">
-        <div className="col-span-4">
-          <Label>Tên biến thể</Label>
-          <Input
-            placeholder="Màu Đỏ - Size L"
-            value={vName}
-            onChange={(e) => setVName(e.target.value)}
-          />
-        </div>
-        <div className="col-span-3">
-          <Label>Giá tiền</Label>
-          <PriceInput value={vPrice} onChange={setVPrice} />
-        </div>
-        <div className="col-span-2">
-          <Label>Kho</Label>
-          <Input
-            type="number"
-            value={vStock}
-            onChange={(e) => setVStock(Number(e.target.value))}
-          />
-        </div>
-        <div className="col-span-2">
-          <Label>SKU (Opt)</Label>
-          <Input value={vSku} onChange={(e) => setVSku(e.target.value)} />
-        </div>
-        <div className="col-span-1">
-          <Button
-            onClick={add}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-0 h-10"
-          >
-            <Plus size={18} />
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-2 max-h-60 overflow-y-auto">
-        {value.map((v, idx) => (
-          <div
-            key={idx}
-            className="flex items-center justify-between bg-white p-3 rounded border shadow-sm"
-          >
-            <div>
-              <div className="font-medium text-sm">{v.name}</div>
-              <div className="text-xs text-gray-500">SKU: {v.sku || '—'}</div>
-            </div>
-            <div className="flex items-center gap-4 text-sm">
-              <span className="font-semibold text-emerald-600">
-                {formatVND(v.price)} ₫
-              </span>
-              <span className="text-gray-600">Kho: {v.stock}</span>
-              <button
-                onClick={() => removeIdx(idx)}
-                className="text-red-500 hover:bg-red-50 p-1 rounded"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
-        {value.length === 0 && (
-          <div className="text-center text-sm text-zinc-400 py-2 border rounded-lg">
-            Chưa có biến thể nào.
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -919,6 +1304,7 @@ export default function AdminProductsPage() {
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
 
   const urlInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     Promise.all([loadProducts(), loadCategories()]).finally(() => setLoading(false));
@@ -933,8 +1319,7 @@ export default function AdminProductsPage() {
 
       const arr = Array.isArray(data) ? data : data?.items || [];
       const items = arr.map((p: any) => {
-        const images = normalizeImages(p.images);
-
+        const images = normalizeImages(p.images); // nếu BE đã bỏ images ở list → images = []
         const displayPrice = Number(p.price || 0);
         const totalStock = Number(p.stock || 0);
 
@@ -954,6 +1339,7 @@ export default function AdminProductsPage() {
           variants: p.variants || [],
         };
       });
+
       setList(items);
     } catch (e) {
       toast.error('Lỗi tải danh sách sản phẩm');
@@ -974,18 +1360,45 @@ export default function AdminProductsPage() {
     } catch {}
   }
 
-  const openEditor = (p?: Product) => {
+  const openEditor = async (p?: Product) => {
     if (p) {
+      // ✅ nếu list không có images đầy đủ → fetch detail theo id để edit cho chuẩn
+      let full = p;
+      if (p.id) {
+        try {
+          const r = await fetch(`/api/admin/products/${p.id}`, { cache: 'no-store' });
+          if (r.ok) {
+            const d = await r.json();
+            full = {
+              ...d,
+              price: Number(d.price || 0),
+              stock: Number(d.stock || 0),
+              categories: Array.isArray(d.categories)
+                ? d.categories.map((c: any) => ({ id: Number(c.id), name: c.name, slug: c.slug }))
+                : [],
+              images: normalizeImages(d.images),
+              image: d.image || normalizeImages(d.images)[0] || '',
+              colors: d.colors || [],
+              specs: d.specs || [],
+              status: d.status === 'closed' ? 'closed' : 'open',
+            };
+          }
+        } catch {}
+      }
+
       setEditing({
-        ...p,
-        colors: p.colors || [],
-        specs: p.specs || [],
-        variants: p.variants || [],
+        ...full,
+        colors: full.colors || [],
+        specs: full.specs || [],
+        variants: full.variants || [],
       });
-      setSelectedCatIds((p.categories || []).map((c) => Number(c.id)));
+
+      setSelectedCatIds((full.categories || []).map((c) => Number(c.id)));
+
       const existingImages =
-        p.images && p.images.length > 0 ? p.images : p.image ? [p.image] : [];
-      setGallery(existingImages.map((url) => ({ url, kind: 'url' })));
+        full.images && full.images.length > 0 ? full.images : full.image ? [full.image] : [];
+
+      setGallery(existingImages.filter((u) => IMG_RE.test(u)).map((url) => ({ url, kind: 'url' })));
     } else {
       setEditing({
         name: '',
@@ -1008,13 +1421,53 @@ export default function AdminProductsPage() {
     setShowDrawer(true);
   };
 
+  // ✅ nhân bản: mở drawer bản sao, mặc định "closed" để không public
+  const handleDuplicate = async (p: Product) => {
+    const base = {
+      ...p,
+      id: undefined,
+      slug: '',
+      name: `${p.name} (Bản sao)`,
+      sold: 0,
+      status: 'closed' as const,
+      sku: p.sku ? `${p.sku}-COPY` : '',
+    };
+
+    await openEditor(base);
+    toast.success('Đã tạo bản sao (chưa đăng). Hãy chỉnh sửa rồi bấm Lưu.');
+  };
+
+  const handlePickFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const maxAdd = 12 - gallery.length;
+    const pick = Array.from(files).slice(0, Math.max(0, maxAdd));
+    if (pick.length === 0) return toast.error('Tối đa 12 ảnh.');
+
+    try {
+      const urls: string[] = [];
+      for (const f of pick) {
+        const dataUrl = await compressToDataUrl(f, 1600, 0.85);
+        urls.push(dataUrl);
+      }
+
+      setGallery((prev) => [...prev, ...urls.map((u) => ({ url: u, kind: 'file' as const }))]);
+      toast.success(`Đã thêm ${urls.length} ảnh`);
+    } catch {
+      toast.error('Upload ảnh thất bại');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleSave = async () => {
     if (!editing || !editing.name) return toast.error('Tên sản phẩm là bắt buộc');
     setSaving(true);
 
-    const finalImages = gallery.map((g) => g.url);
+    const finalImages = gallery.map((g) => g.url).filter((u) => IMG_RE.test(u));
 
-    // KHÔNG gửi slug lên BE – để BE tự sinh / giữ
+    // ✅ KHÔNG gửi slug lên BE
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { slug, ...restEditing } = editing as any;
 
     const payload = {
@@ -1026,23 +1479,34 @@ export default function AdminProductsPage() {
       categories: selectedCatIds,
       colors: editing.colors,
       specs: editing.specs,
-      variants: undefined, // KHÔNG GỬI VARIANTS
+      variants: undefined, // giữ đúng như bạn yêu cầu
     };
 
     try {
       const url = editing.id ? `/api/admin/products/${editing.id}` : '/api/admin/products';
       const method = editing.id ? 'PATCH' : 'POST';
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error();
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => '');
+        throw new Error(t || 'Save failed');
+      }
+
       await loadProducts();
       setShowDrawer(false);
       toast.success('Lưu thành công');
-    } catch {
-      toast.error('Lưu thất bại');
+    } catch (e: any) {
+      const msg = String(e?.message || '');
+      if (msg.includes('Payload too large') || msg.includes('413')) {
+        toast.error('Ảnh quá nặng. Hãy giảm dung lượng/giảm số ảnh.');
+      } else {
+        toast.error('Lưu thất bại');
+      }
     } finally {
       setSaving(false);
     }
@@ -1058,20 +1522,20 @@ export default function AdminProductsPage() {
 
   const filtered = useMemo(() => {
     const lowerQ = q.toLowerCase();
-    return list.filter(
-      (p) =>
-        (!q ||
-          p.name.toLowerCase().includes(lowerQ) ||
-          p.sku?.toLowerCase().includes(lowerQ)) &&
-        (catF === 'all' || p.categories?.some((c) => c.id === catF)),
-    );
-  }, [list, q, catF]);
+    return list.filter((p) => {
+      const okQ =
+        !q || p.name.toLowerCase().includes(lowerQ) || p.sku?.toLowerCase().includes(lowerQ);
+      const okCat = catF === 'all' || p.categories?.some((c) => c.id === catF);
+      const okStatus = statusF === 'all' || p.status === statusF;
+      return okQ && okCat && okStatus;
+    });
+  }, [list, q, catF, statusF]);
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans pb-20">
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <h1 className="text-lg font-bold tracking-tight text-zinc-900 flex items-center gap-2">
+    <div className="min-h-screen pb-20 font-sans bg-zinc-50 text-zinc-900">
+      <header className="sticky top-0 z-20 bg-white border-b border-zinc-200">
+        <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl">
+          <h1 className="flex items-center gap-2 text-lg font-bold tracking-tight text-zinc-900">
             📦 Quản lý sản phẩm{' '}
             <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-xs text-zinc-600">
               {list.length}
@@ -1081,26 +1545,23 @@ export default function AdminProductsPage() {
             <Plus size={16} /> Thêm mới
           </Button>
         </div>
-        <div className="max-w-7xl mx-auto px-4 pb-4 flex flex-col md:flex-row gap-3">
+
+        <div className="flex flex-col gap-3 px-4 pb-4 mx-auto max-w-7xl md:flex-row">
           <div className="relative flex-1">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-              size={16}
-            />
+            <Search className="absolute -translate-y-1/2 left-3 top-1/2 text-zinc-400" size={16} />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Tìm kiếm tên, mã SKU..."
-              className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-200 rounded-md text-sm focus:ring-2 focus:ring-zinc-900 outline-none"
+              className="w-full py-2 pr-4 text-sm border rounded-md outline-none pl-9 bg-zinc-50 border-zinc-200 focus:ring-2 focus:ring-zinc-900"
             />
           </div>
+
           <div className="flex gap-2">
             <select
               value={catF}
-              onChange={(e) =>
-                setCatF(e.target.value === 'all' ? 'all' : Number(e.target.value))
-              }
-              className="h-9 px-3 bg-white border border-zinc-200 rounded-md text-sm outline-none"
+              onChange={(e) => setCatF(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+              className="px-3 text-sm bg-white border rounded-md outline-none h-9 border-zinc-200"
             >
               <option value="all">Tất cả danh mục</option>
               {allCats.map((c) => (
@@ -1109,10 +1570,11 @@ export default function AdminProductsPage() {
                 </option>
               ))}
             </select>
+
             <select
               value={statusF}
               onChange={(e) => setStatusF(e.target.value as any)}
-              className="h-9 px-3 bg-white border border-zinc-200 rounded-md text-sm outline-none"
+              className="px-3 text-sm bg-white border rounded-md outline-none h-9 border-zinc-200"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="open">Đang bán</option>
@@ -1122,17 +1584,15 @@ export default function AdminProductsPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="px-4 py-6 mx-auto max-w-7xl">
         {loading ? (
-          <div className="text-center py-20 text-zinc-400 animate-pulse">
-            Đang tải dữ liệu...
-          </div>
+          <div className="py-20 text-center text-zinc-400 animate-pulse">Đang tải dữ liệu...</div>
         ) : (
-          <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-hidden bg-white border rounded-lg shadow-sm border-zinc-200">
             <table className="w-full text-sm text-left">
-              <thead className="bg-zinc-50 border-b border-zinc-200 text-xs uppercase text-zinc-500 font-semibold">
+              <thead className="text-xs font-semibold uppercase border-b bg-zinc-50 border-zinc-200 text-zinc-500">
                 <tr>
-                  <th className="px-4 py-3 w-16">Image</th>
+                  <th className="w-16 px-4 py-3">Image</th>
                   <th className="px-4 py-3">Sản phẩm</th>
                   <th className="px-4 py-3 text-right">Giá bán</th>
                   <th className="px-4 py-3 text-center">Kho</th>
@@ -1140,46 +1600,40 @@ export default function AdminProductsPage() {
                   <th className="px-4 py-3 text-right">Thao tác</th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-zinc-100">
                 {filtered.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="hover:bg-zinc-50/50 transition-colors group"
-                  >
+                  <tr key={p.id} className="transition-colors hover:bg-zinc-50/50 group">
                     <td className="px-4 py-3">
-                      <div className="w-10 h-10 rounded bg-zinc-100 border border-zinc-200 overflow-hidden">
+                      <div className="w-10 h-10 overflow-hidden border rounded bg-zinc-100 border-zinc-200">
                         <img
                           src={p.image || '/placeholder.jpg'}
                           alt=""
-                          className="w-full h-full object-cover"
+                          className="object-cover w-full h-full"
                           onError={(e) => (e.currentTarget.src = '/placeholder.jpg')}
                         />
                       </div>
                     </td>
+
                     <td className="px-4 py-3 font-medium text-zinc-900">
-                      <div
-                        className="truncate max-w-[300px]"
-                        title={p.name}
-                      >
+                      <div className="truncate max-w-[300px]" title={p.name}>
                         {p.name}
                       </div>
-                      <div className="text-xs text-zinc-400 font-mono">
-                        {p.sku}
-                      </div>
+                      <div className="font-mono text-xs text-zinc-400">{p.sku}</div>
                     </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {formatVND(p.price)}
-                    </td>
-                    <td className="px-4 py-3 text-center text-xs">
-                      {p.stock}
-                    </td>
+
+                    <td className="px-4 py-3 font-medium text-right">{formatVND(p.price)}</td>
+
+                    <td className="px-4 py-3 text-xs text-center">{p.stock}</td>
+
                     <td className="px-4 py-3">
                       <Badge color={p.status === 'open' ? 'green' : 'zinc'}>
                         {p.status === 'open' ? 'Bán' : 'Ẩn'}
                       </Badge>
                     </td>
+
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1 transition-opacity opacity-0 group-hover:opacity-100">
                         <button
                           onClick={() => setViewing(p)}
                           className="p-1.5 hover:bg-zinc-100 rounded text-zinc-600"
@@ -1187,6 +1641,15 @@ export default function AdminProductsPage() {
                         >
                           <Eye size={14} />
                         </button>
+
+                        <button
+                          onClick={() => handleDuplicate(p)}
+                          className="p-1.5 hover:bg-zinc-100 rounded text-zinc-600"
+                          title="Nhân bản"
+                        >
+                          <Copy size={14} />
+                        </button>
+
                         <button
                           onClick={() => openEditor(p)}
                           className="p-1.5 hover:bg-zinc-100 rounded text-zinc-600"
@@ -1194,6 +1657,7 @@ export default function AdminProductsPage() {
                         >
                           <Edit3 size={14} />
                         </button>
+
                         <button
                           onClick={() => setConfirmDelete(p)}
                           className="p-1.5 hover:bg-red-50 rounded text-red-600"
@@ -1213,37 +1677,28 @@ export default function AdminProductsPage() {
 
       {viewing && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
-            onClick={() => setViewing(null)}
-          />
-          <div className="relative w-full max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setViewing(null)} />
+          <div className="relative flex flex-col w-full h-full max-w-lg duration-300 bg-white shadow-2xl animate-in slide-in-from-right">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-bold">Chi tiết sản phẩm</h2>
-              <button onClick={() => setViewing(null)}>
-                <X size={20} />
-              </button>
+              <button onClick={() => setViewing(null)}><X size={20} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="aspect-square bg-zinc-100 rounded-lg overflow-hidden border">
-                <img
-                  src={viewing.image || '/placeholder.jpg'}
-                  className="w-full h-full object-cover"
-                  alt=""
-                />
+
+            <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+              <div className="overflow-hidden border rounded-lg aspect-square bg-zinc-100">
+                <img src={viewing.image || '/placeholder.jpg'} className="object-cover w-full h-full" alt="" />
               </div>
+
               <div>
-                <h3 className="text-xl font-bold text-zinc-900">
-                  {viewing.name}
-                </h3>
-                <div className="text-lg font-semibold text-emerald-600 mt-1">
+                <h3 className="text-xl font-bold text-zinc-900">{viewing.name}</h3>
+                <div className="mt-1 text-lg font-semibold text-emerald-600">
                   {formatVND(viewing.price)} ₫
                 </div>
               </div>
-              <div className="space-y-2 text-sm text-zinc-600 bg-zinc-50 p-4 rounded-lg border">
+
+              <div className="p-4 space-y-2 text-sm border rounded-lg text-zinc-600 bg-zinc-50">
                 <div className="flex justify-between">
-                  <span>Slug:</span>{' '}
-                  <span className="font-mono">{viewing.slug}</span>
+                  <span>Slug:</span> <span className="font-mono">{viewing.slug}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>SKU:</span> <span>{viewing.sku || '—'}</span>
@@ -1255,16 +1710,16 @@ export default function AdminProductsPage() {
                   <span>Đã bán:</span> <b>{viewing.sold}</b>
                 </div>
               </div>
+
               <div>
-                <h4 className="font-bold text-sm mb-2 uppercase text-zinc-500">
-                  Mô tả
-                </h4>
+                <h4 className="mb-2 text-sm font-bold uppercase text-zinc-500">Mô tả</h4>
                 <div className="text-sm text-zinc-700 whitespace-pre-wrap bg-white p-3 border rounded-md min-h-[100px]">
                   {viewing.description || 'Chưa có mô tả'}
                 </div>
               </div>
             </div>
-            <div className="p-4 border-t bg-zinc-50 flex justify-end">
+
+            <div className="flex justify-end p-4 border-t bg-zinc-50">
               <Button
                 onClick={() => {
                   openEditor(viewing);
@@ -1280,117 +1735,79 @@ export default function AdminProductsPage() {
 
       {showDrawer && editing && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
-            onClick={() => setShowDrawer(false)}
-          />
-          <div
-            className="relative w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b bg-white sticky top-0 z-10">
-              <h2 className="text-lg font-bold text-zinc-900">
-                {editing.id ? 'Chỉnh sửa' : 'Thêm mới'}
-              </h2>
-              <button
-                onClick={() => setShowDrawer(false)}
-                className="p-2 hover:bg-zinc-100 rounded-full"
-              >
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowDrawer(false)} />
+          <div className="relative flex flex-col w-full h-full max-w-2xl duration-300 bg-white shadow-2xl animate-in slide-in-from-right" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white border-b">
+              <h2 className="text-lg font-bold text-zinc-900">{editing.id ? 'Chỉnh sửa' : 'Thêm mới'}</h2>
+              <button onClick={() => setShowDrawer(false)} className="p-2 rounded-full hover:bg-zinc-100">
                 <X size={20} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-zinc-50/50">
+
+            <div className="flex-1 p-6 space-y-8 overflow-y-auto bg-zinc-50/50">
               <section className="space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b">
                   <Package size={18} />
                   <h3 className="font-bold">Thông tin</h3>
                 </div>
+
                 <div className="grid gap-4">
                   <div>
                     <Label required>Tên sản phẩm</Label>
-                    <Input
-                      value={editing.name}
-                      onChange={(e: any) =>
-                        setEditing((prev) => ({ ...prev!, name: e.target.value }))
-                      }
-                    />
+                    <Input value={editing.name} onChange={(e: any) => setEditing((prev) => ({ ...prev!, name: e.target.value }))} />
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Giá bán (VNĐ)</Label>
-                      <PriceInput
-                        value={editing.price}
-                        onChange={(v) =>
-                          setEditing({ ...(editing as Product), price: v })
-                        }
-                      />
+                      <PriceInput value={editing.price} onChange={(v) => setEditing({ ...(editing as Product), price: v })} />
                     </div>
                     <div>
                       <Label>Mã SKU</Label>
-                      <Input
-                        value={editing.sku || ''}
-                        onChange={(e: any) =>
-                          setEditing({ ...(editing as Product), sku: e.target.value })
-                        }
-                      />
+                      <Input value={editing.sku || ''} onChange={(e: any) => setEditing({ ...(editing as Product), sku: e.target.value })} />
                     </div>
                   </div>
+
                   <div>
                     <Label>Slug (tự sinh từ server)</Label>
-                    <Input
-                      value={editing.slug || ''}
-                      readOnly
-                      disabled
-                      placeholder="Sẽ được tạo sau khi lưu"
-                    />
+                    <Input value={editing.slug || ''} readOnly disabled placeholder="Sẽ được tạo sau khi lưu" />
                   </div>
+
                   <div>
                     <Label>Mô tả</Label>
                     <textarea
                       className="w-full p-3 text-sm border border-zinc-300 rounded-md bg-white min-h-[120px]"
                       value={editing.description || ''}
-                      onChange={(e) =>
-                        setEditing({
-                          ...(editing as Product),
-                          description: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setEditing({ ...(editing as Product), description: e.target.value })}
                     />
                   </div>
                 </div>
               </section>
 
               <section className="space-y-4">
-                <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                <div className="flex items-center gap-2 pb-2 border-b">
                   <Layers size={18} />
-                  <h3 className="font-bold">Phân loại hàng</h3>
-                </h3>
-                <div className="grid grid-cols-2 gap-4 bg-white p-3 rounded border">
+                  <h3 className="font-bold">Kho & Trạng thái</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4 p-3 bg-white border rounded">
                   <div>
                     <Label>Tồn kho</Label>
-                    <Input
-                      type="number"
-                      value={editing.stock}
-                      onChange={(e: any) =>
-                        setEditing({
-                          ...(editing as Product),
-                          stock: Number(e.target.value),
-                        })
-                      }
-                    />
+                    <Input type="number" value={editing.stock} onChange={(e: any) => setEditing({ ...(editing as Product), stock: Number(e.target.value) })} />
                   </div>
                   <div>
                     <Label>Đã bán</Label>
-                    <Input
-                      type="number"
-                      value={editing.sold}
-                      onChange={(e: any) =>
-                        setEditing({
-                          ...(editing as Product),
-                          sold: Number(e.target.value),
-                        })
-                      }
-                    />
+                    <Input type="number" value={editing.sold} onChange={(e: any) => setEditing({ ...(editing as Product), sold: Number(e.target.value) })} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Trạng thái</Label>
+                    <select
+                      value={editing.status}
+                      onChange={(e) => setEditing({ ...(editing as Product), status: e.target.value as any })}
+                      className="w-full h-10 px-3 text-sm bg-white border rounded-md border-zinc-300"
+                    >
+                      <option value="open">Đang bán</option>
+                      <option value="closed">Ngưng bán</option>
+                    </select>
                   </div>
                 </div>
               </section>
@@ -1400,32 +1817,40 @@ export default function AdminProductsPage() {
                   <Tag size={18} />
                   <h3 className="font-bold">Thuộc tính & Màu sắc</h3>
                 </div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <ColorsEditor
-                    value={editing.colors || []}
-                    onChange={(colors) =>
-                      setEditing({ ...(editing as Product), colors })
-                    }
-                  />
-                  <SpecsEditor
-                    value={editing.specs || []}
-                    onChange={(specs) =>
-                      setEditing({ ...(editing as Product), specs })
-                    }
-                  />
+                <div className="grid gap-6 md:grid-cols-2">
+                  <ColorsEditor value={editing.colors || []} onChange={(colors) => setEditing({ ...(editing as Product), colors })} />
+                  <SpecsEditor value={editing.specs || []} onChange={(specs) => setEditing({ ...(editing as Product), specs })} />
                 </div>
               </section>
 
               <section className="space-y-4">
-                <h3 className="flex items-center gap-2 pb-2 border-b">
+                <div className="flex items-center gap-2 pb-2 border-b">
                   <ImageIcon size={18} />
                   <h3 className="font-bold">Hình ảnh</h3>
-                </h3>
-                <div className="flex gap-2 mb-3">
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handlePickFiles(e.target.files)}
+                  />
+                  <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                    <Upload size={16} /> Upload ảnh từ máy
+                  </Button>
+                  <div className="text-xs text-zinc-500">
+                    Lưu DB base64 (khuyến nghị ảnh nhỏ). Nếu 413/tràn data: giảm dung lượng/giảm số ảnh.
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-3">
                   <input
                     ref={urlInputRef}
-                    className="flex-1 h-10 px-3 text-sm border border-zinc-300 rounded-md bg-white"
-                    placeholder="Dán URL ảnh..."
+                    className="flex-1 h-10 px-3 text-sm bg-white border rounded-md border-zinc-300"
+                    placeholder="Dán URL ảnh (http/https hoặc data:image...)"
                   />
                   <Button
                     variant="secondary"
@@ -1434,11 +1859,9 @@ export default function AdminProductsPage() {
                         const urls = urlInputRef.current.value
                           .split(/[\n,]+/)
                           .map((s) => s.trim())
-                          .filter(Boolean);
-                        setGallery((prev) => [
-                          ...prev,
-                          ...urls.map((u) => ({ url: u, kind: 'url' as const })),
-                        ]);
+                          .filter((u) => IMG_RE.test(u));
+                        if (urls.length === 0) return toast.error('URL ảnh không hợp lệ');
+                        setGallery((prev) => [...prev, ...urls.map((u) => ({ url: u, kind: 'url' as const }))]);
                         urlInputRef.current.value = '';
                       }
                     }}
@@ -1446,26 +1869,22 @@ export default function AdminProductsPage() {
                     Thêm
                   </Button>
                 </div>
+
                 <div className="grid grid-cols-4 gap-3">
                   {gallery.map((g, i) => (
-                    <div
-                      key={i}
-                      className="relative group aspect-square bg-white rounded-md overflow-hidden border border-zinc-200"
-                    >
-                      <img
-                        src={g.url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        onError={(e) => (e.currentTarget.style.display = 'none')}
-                      />
+                    <div key={i} className="relative overflow-hidden bg-white border rounded-md group aspect-square border-zinc-200">
+                      <img src={g.url} alt="" className="object-cover w-full h-full" onError={(e) => (e.currentTarget.style.display = 'none')} />
                       <button
-                        onClick={() =>
-                          setGallery((prev) => prev.filter((_, idx) => idx !== i))
-                        }
-                        className="absolute top-1 right-1 bg-white/90 text-red-500 p-1 rounded opacity-0 group-hover:opacity-100"
+                        onClick={() => setGallery((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="absolute p-1 text-red-500 rounded opacity-0 top-1 right-1 bg-white/90 group-hover:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>
+
+                      <div className="absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-black/60 text-white">
+                        {g.kind === 'file' ? 'FILE' : 'URL'}
+                      </div>
+
                       {i === 0 && (
                         <div className="absolute bottom-0 w-full bg-black/50 text-white text-[10px] text-center">
                           Ảnh chính
@@ -1477,12 +1896,13 @@ export default function AdminProductsPage() {
               </section>
 
               <section className="space-y-4">
-                <h3 className="flex items-center gap-2 pb-2 border-b">
+                <div className="flex items-center gap-2 pb-2 border-b">
                   <Layers size={18} />
                   <h3 className="font-bold">Danh mục</h3>
-                </h3>
+                </div>
+
                 <div className="space-y-2">
-                  <div className="max-h-40 overflow-y-auto border border-zinc-300 rounded-md p-2 bg-white">
+                  <div className="p-2 overflow-y-auto bg-white border rounded-md max-h-40 border-zinc-300">
                     {allCats.map((c) => (
                       <label
                         key={c.id}
@@ -1493,9 +1913,7 @@ export default function AdminProductsPage() {
                           checked={selectedCatIds.includes(c.id)}
                           onChange={() =>
                             setSelectedCatIds((prev) =>
-                              prev.includes(c.id)
-                                ? prev.filter((i) => i !== c.id)
-                                : [...prev, c.id],
+                              prev.includes(c.id) ? prev.filter((i) => i !== c.id) : [...prev, c.id],
                             )
                           }
                           className="rounded border-zinc-300 accent-zinc-900"
@@ -1504,69 +1922,12 @@ export default function AdminProductsPage() {
                       </label>
                     ))}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Trạng thái</Label>
-                      <select
-                        value={editing.status}
-                        onChange={(e) =>
-                          setEditing({
-                            ...(editing as Product),
-                            status: e.target.value as any,
-                          })
-                        }
-                        className="w-full h-10 px-3 border border-zinc-300 rounded-md text-sm bg-white"
-                      >
-                        <option value="open">Đang bán</option>
-                        <option value="closed">Ngưng bán</option>
-                      </select>
-                    </div>
-                    <div>
-                      <Label>SKU Gốc (Tùy chọn)</Label>
-                      <Input
-                        value={editing.sku || ''}
-                        onChange={(e: any) =>
-                          setEditing({ ...(editing as Product), sku: e.target.value })
-                        }
-                        placeholder="Mã SKU chung"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Tồn kho Chung</Label>
-                      <Input
-                        type="number"
-                        value={editing.stock}
-                        onChange={(e: any) =>
-                          setEditing({
-                            ...(editing as Product),
-                            stock: Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>Đã bán Chung</Label>
-                      <Input
-                        type="number"
-                        value={editing.sold}
-                        onChange={(e: any) =>
-                          setEditing({
-                            ...(editing as Product),
-                            sold: Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
                 </div>
               </section>
             </div>
-            <div className="p-4 border-t border-zinc-200 bg-white flex items-center justify-end gap-3">
-              <Button variant="ghost" onClick={() => setShowDrawer(false)}>
-                Hủy bỏ
-              </Button>
+
+            <div className="flex items-center justify-end gap-3 p-4 bg-white border-t border-zinc-200">
+              <Button variant="ghost" onClick={() => setShowDrawer(false)}>Hủy bỏ</Button>
               <Button onClick={handleSave} disabled={saving}>
                 {saving ? 'Đang lưu...' : 'Lưu lại'}
               </Button>
@@ -1577,15 +1938,11 @@ export default function AdminProductsPage() {
 
       {confirmDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full">
-            <h3 className="text-lg font-bold text-zinc-900 mb-2">Xác nhận xóa?</h3>
+          <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-xl">
+            <h3 className="mb-2 text-lg font-bold text-zinc-900">Xác nhận xóa?</h3>
             <div className="flex justify-end gap-3 mt-6">
-              <Button variant="secondary" onClick={() => setConfirmDelete(null)}>
-                Hủy
-              </Button>
-              <Button variant="danger" onClick={handleDelete}>
-                Xóa ngay
-              </Button>
+              <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Hủy</Button>
+              <Button variant="danger" onClick={handleDelete}>Xóa ngay</Button>
             </div>
           </div>
         </div>

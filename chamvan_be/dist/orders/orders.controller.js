@@ -14,10 +14,20 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersAdminController = exports.OrdersPublicController = void 0;
 const common_1 = require("@nestjs/common");
+const throttler_1 = require("@nestjs/throttler");
 const orders_service_1 = require("./orders.service");
 const create_order_dto_1 = require("./dto/create-order.dto");
 const jwt_guard_1 = require("../auth/jwt.guard");
 const optional_jwt_auth_guard_1 = require("../auth/guards/optional-jwt-auth.guard");
+function getClientIp(req) {
+    const fwd = req.headers['x-forwarded-for'] ?? '';
+    const ipFromFwd = fwd.split(',')[0]?.trim();
+    return (ipFromFwd ||
+        req.ip ||
+        req.socket?.remoteAddress ||
+        req.connection?.remoteAddress ||
+        'unknown');
+}
 let OrdersPublicController = class OrdersPublicController {
     orders;
     constructor(orders) {
@@ -25,12 +35,11 @@ let OrdersPublicController = class OrdersPublicController {
     }
     async create(dto, req) {
         const userId = req?.user?.id ?? null;
-        return this.orders.create(dto, userId);
+        const ip = getClientIp(req);
+        const userAgent = req.headers['user-agent'] ?? null;
+        return this.orders.create(dto, userId, { ip, userAgent });
     }
     async myOrders(req) {
-        if (process.env.AUTH_DEBUG === '1') {
-            console.log('[ORDERS] /orders/my req.user =', req?.user);
-        }
         const userId = req?.user?.id;
         if (!userId)
             throw new common_1.BadRequestException('Invalid user');
@@ -38,15 +47,15 @@ let OrdersPublicController = class OrdersPublicController {
     }
     findOne(id) {
         const n = Number(id);
-        if (!Number.isInteger(n)) {
+        if (!Number.isInteger(n))
             throw new common_1.BadRequestException('Invalid id');
-        }
         return this.orders.findOne(n);
     }
 };
 exports.OrdersPublicController = OrdersPublicController;
 __decorate([
     (0, common_1.UseGuards)(optional_jwt_auth_guard_1.OptionalJwtAuthGuard),
+    (0, throttler_1.Throttle)({ default: { ttl: 60, limit: 5 } }),
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
@@ -83,9 +92,8 @@ let OrdersAdminController = class OrdersAdminController {
     }
     update(id, body) {
         const n = Number(id);
-        if (!Number.isInteger(n)) {
+        if (!Number.isInteger(n))
             throw new common_1.BadRequestException('Invalid id');
-        }
         return this.orders.updateStatus(n, body);
     }
 };

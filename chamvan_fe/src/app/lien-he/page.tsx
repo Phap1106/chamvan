@@ -20,8 +20,8 @@ export const metadata: Metadata = {
 const CONTACT = {
   email: "chamvan@gmail.com",
   hotline: "0933 415 331", // TODO: thay bằng số thật
-  zalo: "https://zalo.me/0000000000", // TODO: thay link Zalo Official / cá nhân
-  facebook: "https://www.facebook.com/profile.php?id=61558520552168", // TODO: thay link fanpage
+  fanpage: "https://www.facebook.com/profile.php?id=61558520552168", // TODO: thay link Zalo Official / cá nhân
+  facebook: "https://m.me/288818777646693", // TODO: thay link fanpage
   showroom: {
     name: "Chạm Vân",
     address: "Số 12, đường Xóm Miễu, Thôn Duyên Trường, Xã Duyên Thái, Huyện Thường Tín, Thành phố Hà Nội, Việt Nam",
@@ -72,13 +72,13 @@ export default function LienHePage() {
               <ArrowRight className="w-4 h-4 ml-2 transition opacity-0 group-hover:opacity-100" />
             </a>
             <a
-              href={CONTACT.zalo}
+              href={CONTACT.fanpage}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center px-4 py-3 text-sm font-medium transition bg-white border shadow-sm group rounded-2xl border-zinc-200 text-zinc-800 hover:border-zinc-300 hover:shadow"
             >
               <MessageSquare className="w-5 h-5 mr-2" />
-              Zalo
+              Facebook
               <ArrowRight className="w-4 h-4 ml-2 transition opacity-0 group-hover:opacity-100" />
             </a>
           </div>
@@ -146,14 +146,14 @@ export default function LienHePage() {
                   <MessageSquare className="w-5 h-5 text-zinc-700" />
                 </div>
                 <div>
-                  <p className="font-medium text-zinc-900">Zalo</p>
+                  <p className="font-medium text-zinc-900">FanPage</p>
                   <a
-                    href={CONTACT.zalo}
+                    href={CONTACT.fanpage}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-zinc-600 underline-offset-4 hover:underline"
                   >
-                    Nhắn Zalo ngay
+                    Nhắn chúng tôi ngay !
                   </a>
                 </div>
               </li>
@@ -204,16 +204,16 @@ export default function LienHePage() {
               </p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">
                 Để chuẩn bị tốt nhất, bạn có thể nhắn trước sản phẩm quan tâm
-                qua Zalo hoặc Facebook. Chúng tôi sẽ sắp xếp mẫu và tư vấn phù hợp.
+                qua zalo hoặc Facebook. Chúng tôi sẽ sắp xếp mẫu và tư vấn phù hợp.
               </p>
               <div className="grid grid-cols-1 gap-2 mt-4 sm:grid-cols-2">
                 <a
-                  href={CONTACT.zalo}
+                  href={CONTACT.fanpage}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center px-4 py-3 text-sm font-medium text-white transition bg-black rounded-xl hover:opacity-90"
                 >
-                  Nhắn Zalo
+                  Facebook Page
                 </a>
                 <a
                   href={CONTACT.facebook}

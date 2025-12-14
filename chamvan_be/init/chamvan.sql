@@ -154,6 +154,8 @@ CREATE TABLE `orders` (
   `status` varchar(50) NOT NULL DEFAULT 'chờ duyệt',
   `eta` datetime DEFAULT NULL,
   `userId` int(11) DEFAULT NULL,
+  `ip_address` VARCHAR(64) NULL,
+  `user_agent` VARCHAR(255) NULL;
   `createdAt` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updatedAt` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   PRIMARY KEY (`id`)
@@ -231,16 +233,18 @@ UNLOCK TABLES;
 --
 
 DROP TABLE IF EXISTS `product_images`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
+
 CREATE TABLE `product_images` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `url` text NOT NULL,
+  `url` LONGTEXT NOT NULL,
   `productId` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `FK_b367708bf720c8dd62fc6833161` (`productId`),
-  CONSTRAINT `FK_b367708bf720c8dd62fc6833161` FOREIGN KEY (`productId`) REFERENCES `products` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=321 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `FK_product_images_productId` (`productId`),
+  CONSTRAINT `FK_product_images_productId`
+    FOREIGN KEY (`productId`) REFERENCES `products` (`id`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
