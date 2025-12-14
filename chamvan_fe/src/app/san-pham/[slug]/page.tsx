@@ -4,6 +4,10 @@
 // import ProductGallery from "@/components/ProductGallery";
 // import { notFound } from "next/navigation";
 
+// // Bắt Next luôn render động (tránh cache sai, phù hợp fetch no-store)
+// export const dynamic = "force-dynamic";
+// export const revalidate = 0;
+
 // // --- Types ---
 // export type UIProduct = {
 //   id: string;
@@ -20,8 +24,15 @@
 // };
 
 // // --- Config ---
-// // const BASE = "https://api.chamvan.com/api";
-// const BASE = "http://localhost:4000/api";
+// // Ưu tiên dùng env để deploy Vercel chạy đúng, fallback localhost để dev
+// const BASE = (() => {
+//   const raw =
+//     process.env.NEXT_PUBLIC_API_BASE_URL ||
+//     process.env.NEXT_PUBLIC_API_URL ||
+//     process.env.API_BASE_URL ||
+//     "http://localhost:4000/api";
+//   return String(raw).replace(/\/+$/, "");
+// })();
 
 // // Accept: http(s), data:image (base64), và đường dẫn nội bộ '/'
 // const IMG_RE = /^(https?:\/\/|data:image\/|\/)/i;
@@ -31,7 +42,7 @@
 //   return Number.isFinite(num) ? num : 0;
 // }
 
-// // --- Helper: Chuẩn hóa danh sách ảnh từ API (FIX base64 + url) ---
+// // --- Helper: Chuẩn hóa danh sách ảnh từ API (base64 + url) ---
 // function getImages(root: any): string[] {
 //   const list: string[] = [];
 
@@ -48,8 +59,8 @@
 //         typeof it === "string"
 //           ? it
 //           : typeof it === "object" && typeof it?.url === "string"
-//             ? it.url
-//             : "";
+//           ? it.url
+//           : "";
 
 //       if (typeof u === "string") {
 //         const s = u.trim();
@@ -69,10 +80,12 @@
 //   try {
 //     const res = await fetch(`${BASE}/products/${encodeURIComponent(slug)}`, {
 //       cache: "no-store",
+//       headers: { Accept: "application/json" },
 //     });
 
 //     if (!res.ok) {
-//       console.error(`Fetch product failed: ${res.status}`);
+//       const text = await res.text().catch(() => "");
+//       console.error(`Fetch product failed: ${res.status} ${text}`);
 //       return null;
 //     }
 
@@ -124,7 +137,7 @@
 //   try {
 //     const res = await fetch(
 //       `${BASE}/products/${encodeURIComponent(productId)}/recommendations?limit=4`,
-//       { cache: "no-store" }
+//       { cache: "no-store", headers: { Accept: "application/json" } }
 //     );
 //     if (!res.ok) return [];
 
@@ -166,9 +179,10 @@
 // export default async function ProductDetailPage({
 //   params,
 // }: {
-//   params: { slug: string };
+//   params: Promise<{ slug: string }>;
 // }) {
-//   const slug = params.slug;
+//   // FIX Next: params là Promise -> phải await
+//   const { slug } = await params;
 
 //   const product = await fetchProductBySlug(slug);
 //   if (!product) notFound();
@@ -180,7 +194,6 @@
 //       <div className="grid gap-10 md:grid-cols-2 lg:gap-16">
 //         {/* Cột Trái: Gallery */}
 //         <div>
-//           {/* ProductGallery phải render được data:image/... (khuyến nghị dùng <img> trong ProductGallery) */}
 //           <ProductGallery images={product.images} alt={product.name} />
 //         </div>
 
@@ -205,7 +218,6 @@
 //                 className="block group"
 //               >
 //                 <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 mb-4 border border-gray-100">
-//                   {/* Dùng <img> để chắc chắn hiển thị base64 + fbcdn (không phụ thuộc next.config.js) */}
 //                   <img
 //                     src={p.image || "/placeholder.jpg"}
 //                     alt={p.name}
@@ -236,39 +248,29 @@
 // }
 
 
-
-
-
-
-
-
-// src/app/san-pham/[slug]/page.tsx
 import Link from "next/link";
-import ProductInfoSection from "./ProductInfoSection";
-import ProductGallery from "@/components/ProductGallery";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
-// Bắt Next luôn render động (tránh cache sai, phù hợp fetch no-store)
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import ProductInfoSection from "./ProductInfoSection";
+import ProductGalleryShell from "./ProductGalleryShell";
 
-// --- Types ---
+/** ✅ ISR cho ecommerce: click lần sau gần như instant */
+export const revalidate = 300; // 5 phút
+
 export type UIProduct = {
   id: string;
   name: string;
   slug?: string;
   price: number;
   image?: string;
-  images: string[]; // Full danh sách ảnh (Gallery)
+  images: string[]; // danh sách ảnh "nhẹ" (không base64)
+  hasBase64Images?: boolean; // ✅ chỉ là boolean, không mang base64 qua SSR
   sku?: string;
   colors?: { name: string; hex: string }[];
-  description?: string;
-  specs?: { label: string; value: string }[];
   category?: string;
 };
 
-// --- Config ---
-// Ưu tiên dùng env để deploy Vercel chạy đúng, fallback localhost để dev
 const BASE = (() => {
   const raw =
     process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -278,63 +280,67 @@ const BASE = (() => {
   return String(raw).replace(/\/+$/, "");
 })();
 
-// Accept: http(s), data:image (base64), và đường dẫn nội bộ '/'
-const IMG_RE = /^(https?:\/\/|data:image\/|\/)/i;
+/** ✅ Chỉ cho SSR các URL nhẹ: http(s) hoặc đường dẫn nội bộ */
+const IMG_RE_LITE = /^(https?:\/\/|\/)/i;
+const IMG_RE_FULL = /^(https?:\/\/|data:image\/|\/)/i;
 
 function coerceNumber(n: any): number {
   const num = Number(n);
   return Number.isFinite(num) ? num : 0;
 }
 
-// --- Helper: Chuẩn hóa danh sách ảnh từ API (base64 + url) ---
-function getImages(root: any): string[] {
+function getImagesLite(root: any): string[] {
   const list: string[] = [];
 
-  // 1) Ảnh chính: root.image (string)
-  if (root?.image && typeof root.image === "string") {
-    const s = root.image.trim();
-    if (s && IMG_RE.test(s)) list.push(s);
-  }
+  const add = (u: any) => {
+    if (typeof u !== "string") return;
+    const s = u.trim();
+    if (s && IMG_RE_LITE.test(s) && !list.includes(s)) list.push(s);
+  };
 
-  // 2) Ảnh từ quan hệ images: [{url}] hoặc string[]
+  add(root?.image);
+
   if (Array.isArray(root?.images)) {
     for (const it of root.images) {
-      const u =
-        typeof it === "string"
-          ? it
-          : typeof it === "object" && typeof it?.url === "string"
-          ? it.url
-          : "";
-
-      if (typeof u === "string") {
-        const s = u.trim();
-        if (s && IMG_RE.test(s) && !list.includes(s)) list.push(s);
-      }
+      if (typeof it === "string") add(it);
+      else if (it && typeof it === "object") add(it.url);
     }
   }
 
-  // 3) Fallback
   if (list.length === 0) list.push("/placeholder.jpg");
 
-  return list;
+  // ✅ giới hạn để payload nhẹ
+  return list.slice(0, 6);
 }
 
-// --- API Fetching ---
-async function fetchProductBySlug(slug: string): Promise<UIProduct | null> {
+function hasBase64InRoot(root: any): boolean {
+  const isB64 = (s: any) =>
+    typeof s === "string" && /^data:image\//i.test(s.trim());
+
+  if (isB64(root?.image)) return true;
+
+  if (Array.isArray(root?.images)) {
+    return root.images.some((it: any) => {
+      if (isB64(it)) return true;
+      if (it && typeof it === "object" && isB64(it.url)) return true;
+      return false;
+    });
+  }
+  return false;
+}
+
+async function fetchProductCoreBySlug(slug: string): Promise<UIProduct | null> {
   try {
     const res = await fetch(`${BASE}/products/${encodeURIComponent(slug)}`, {
-      cache: "no-store",
+      next: { revalidate: 300 },
       headers: { Accept: "application/json" },
     });
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error(`Fetch product failed: ${res.status} ${text}`);
-      return null;
-    }
+    if (!res.ok) return null;
 
     const root = await res.json();
-    const images = getImages(root);
+    const images = getImagesLite(root);
+    const hasBase64Images = hasBase64InRoot(root);
 
     const colorsRaw = Array.isArray(root?.colors) ? root.colors : [];
     const colors = colorsRaw
@@ -343,14 +349,6 @@ async function fetchProductBySlug(slug: string): Promise<UIProduct | null> {
         hex: String(c?.hex || "").trim(),
       }))
       .filter((c: any) => c.name.length > 0);
-
-    const specsRaw = Array.isArray(root?.specs) ? root.specs : [];
-    const specs = specsRaw
-      .map((s: any) => ({
-        label: String(s?.label || "").trim(),
-        value: String(s?.value || "").trim(),
-      }))
-      .filter((s: any) => s.label.length > 0);
 
     const category =
       root?.categories?.[0]?.name ||
@@ -365,25 +363,23 @@ async function fetchProductBySlug(slug: string): Promise<UIProduct | null> {
       price: coerceNumber(root.price),
       image: images[0],
       images,
+      hasBase64Images,
       sku: root.sku,
       colors,
-      description: root.description,
-      specs,
       category,
     };
-  } catch (err) {
-    console.error("Error fetching product:", err);
+  } catch {
     return null;
   }
 }
 
-async function fetchSuggested(productId: string): Promise<UIProduct[]> {
+async function SuggestedSection({ productId }: { productId: string }) {
   try {
     const res = await fetch(
       `${BASE}/products/${encodeURIComponent(productId)}/recommendations?limit=4`,
-      { cache: "no-store", headers: { Accept: "application/json" } }
+      { next: { revalidate: 900 }, headers: { Accept: "application/json" } }
     );
-    if (!res.ok) return [];
+    if (!res.ok) return null;
 
     const json = await res.json();
 
@@ -393,100 +389,128 @@ async function fetchSuggested(productId: string): Promise<UIProduct[]> {
     ];
 
     const seen = new Set<string>();
-    return raw
-      .filter((item: any) => {
-        const key = String(item?.id ?? "");
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
+    const items = raw
+      .filter((it: any) => {
+        const k = String(it?.id ?? "");
+        if (!k || seen.has(k)) return false;
+        seen.add(k);
         return true;
       })
       .slice(0, 4)
-      .map((item: any) => {
-        const imgs = getImages(item);
+      .map((it: any) => {
+        // suggested cũng chỉ lấy ảnh nhẹ
+        const imgs: string[] = [];
+        const add = (u: any) => {
+          if (typeof u !== "string") return;
+          const s = u.trim();
+          if (s && IMG_RE_LITE.test(s) && !imgs.includes(s)) imgs.push(s);
+        };
+        add(it?.image);
+        if (Array.isArray(it?.images)) {
+          for (const x of it.images) {
+            if (typeof x === "string") add(x);
+            else if (x && typeof x === "object") add(x.url);
+          }
+        }
+        if (!imgs.length) imgs.push("/placeholder.jpg");
+
         return {
-          id: String(item.id),
-          name: item.name ?? "Sản phẩm",
-          slug: item.slug ?? String(item.id),
-          price: coerceNumber(item.price),
+          id: String(it.id),
+          name: it.name ?? "Sản phẩm",
+          slug: it.slug ?? String(it.id),
+          price: coerceNumber(it.price),
           image: imgs[0],
-          images: imgs,
-          sku: item.sku,
-        } as UIProduct;
+        };
       });
-  } catch (err) {
-    console.error("Error fetching suggestions:", err);
-    return [];
+
+    if (!items.length) return null;
+
+    return (
+      <div className="pt-16 mt-24 border-t border-gray-100">
+        <h2 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900">
+          Có thể bạn cũng thích
+        </h2>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4">
+          {items.map((p) => (
+            <Link key={p.id} href={`/san-pham/${p.slug}`} className="block group">
+              <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 mb-4 border border-gray-100">
+                <img
+                  src={p.image || "/placeholder.jpg"}
+                  alt={p.name}
+                  className="absolute inset-0 object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-medium leading-relaxed text-gray-900 line-clamp-2 group-hover:text-blue-700">
+                  {p.name}
+                </h3>
+                <div className="text-sm font-bold text-gray-900">
+                  {p.price.toLocaleString("vi-VN")} ₫
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  } catch {
+    return null;
   }
 }
 
-// --- Page Component ---
+function SuggestedSkeleton() {
+  return (
+    <div className="pt-16 mt-24 border-t border-gray-100 animate-pulse">
+      <div className="w-56 mb-8 bg-gray-200 rounded h-7" />
+      <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i}>
+            <div className="w-full aspect-[3/4] rounded-xl bg-gray-200 mb-4" />
+            <div className="w-11/12 h-4 mb-2 bg-gray-200 rounded" />
+            <div className="w-6/12 h-4 bg-gray-200 rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default async function ProductDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  // FIX Next: params là Promise -> phải await
   const { slug } = await params;
 
-  const product = await fetchProductBySlug(slug);
+  const product = await fetchProductCoreBySlug(slug);
   if (!product) notFound();
-
-  const suggested = await fetchSuggested(product.id);
 
   return (
     <div className="max-w-6xl px-4 py-8 mx-auto md:px-6 md:py-12">
       <div className="grid gap-10 md:grid-cols-2 lg:gap-16">
-        {/* Cột Trái: Gallery */}
+        {/* ✅ Gallery: SSR hiện ảnh nhẹ/placeholder trước, base64 load sau */}
         <div>
-          <ProductGallery images={product.images} alt={product.name} />
+          <ProductGalleryShell
+            slug={product.slug || slug}
+            alt={product.name}
+            initialImages={product.images}
+            shouldLoadBase64={product.hasBase64Images}
+            apiBase={BASE} // server biết BASE, truyền xuống client
+            imgReFull={IMG_RE_FULL.source}
+          />
         </div>
 
-        {/* Cột Phải: Thông tin & Mua hàng */}
         <div>
           <ProductInfoSection product={product} />
         </div>
       </div>
 
-      {/* Phần Gợi ý */}
-      <div className="pt-16 mt-24 border-t border-gray-100">
-        <h2 className="mb-8 text-2xl font-semibold tracking-tight text-gray-900">
-          Có thể bạn cũng thích
-        </h2>
-
-        {suggested.length > 0 ? (
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-4">
-            {suggested.map((p) => (
-              <Link
-                key={p.id}
-                href={`/san-pham/${p.slug || p.id}`}
-                className="block group"
-              >
-                <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 mb-4 border border-gray-100">
-                  <img
-                    src={p.image || "/placeholder.jpg"}
-                    alt={p.name}
-                    className="absolute inset-0 object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <h3 className="text-sm font-medium leading-relaxed text-gray-900 transition-colors line-clamp-2 group-hover:text-blue-700">
-                    {p.name}
-                  </h3>
-                  <div className="text-sm font-bold text-gray-900">
-                    {p.price.toLocaleString("vi-VN")} ₫
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm italic text-gray-500">
-            Chưa có sản phẩm gợi ý phù hợp.
-          </p>
-        )}
-      </div>
+      {/* ✅ Suggested không block trang */}
+      <Suspense fallback={<SuggestedSkeleton />}>
+        <SuggestedSection productId={product.id} />
+      </Suspense>
     </div>
   );
 }

@@ -26,7 +26,6 @@
 // export default function ProductInfoSection({ product }: { product: P }) {
 //   const p = product;
 
-//   // chọn màu đầu tiên có hex hợp lệ (nếu có)
 //   const firstHex =
 //     p.colors?.find((c) => typeof c.hex === "string" && c.hex.trim().length > 0)
 //       ?.hex || undefined;
@@ -77,7 +76,7 @@
 //           productId={p.id}
 //           name={p.name}
 //           price={p.price}
-//           image={p.image || "/placeholder.jpg"} // base64 vẫn OK
+//           image={p.image || "/placeholder.jpg"}
 //           qty={qty}
 //           color={colorHex}
 //         />
@@ -112,16 +111,10 @@
 //           >
 //             <ReactMarkdown
 //               components={{
-//                 p: ({ ...props }) => (
-//                   <p className="whitespace-pre-wrap" {...props} />
-//                 ),
-//                 ul: ({ ...props }) => (
-//                   <ul className="ml-5 space-y-1 list-disc" {...props} />
-//                 ),
-//                 ol: ({ ...props }) => (
-//                   <ol className="ml-5 space-y-1 list-decimal" {...props} />
-//                 ),
-//                 li: ({ ...props }) => <li {...props} />,
+//                 p: (props) => <p className="whitespace-pre-wrap" {...props} />,
+//                 ul: (props) => <ul className="ml-5 space-y-1 list-disc" {...props} />,
+//                 ol: (props) => <ol className="ml-5 space-y-1 list-decimal" {...props} />,
+//                 li: (props) => <li {...props} />,
 //               }}
 //             >
 //               {desc}
@@ -157,16 +150,10 @@
 //                   <div className="space-y-1 text-neutral-800">
 //                     <ReactMarkdown
 //                       components={{
-//                         p: ({ ...props }) => (
-//                           <p className="whitespace-pre-wrap" {...props} />
-//                         ),
-//                         ul: ({ ...props }) => (
-//                           <ul className="ml-4 list-disc space-y-0.5" {...props} />
-//                         ),
-//                         ol: ({ ...props }) => (
-//                           <ol className="ml-4 list-decimal space-y-0.5" {...props} />
-//                         ),
-//                         li: ({ ...props }) => <li {...props} />,
+//                         p: (props) => <p className="whitespace-pre-wrap" {...props} />,
+//                         ul: (props) => <ul className="ml-4 list-disc space-y-0.5" {...props} />,
+//                         ol: (props) => <ol className="ml-4 list-decimal space-y-0.5" {...props} />,
+//                         li: (props) => <li {...props} />,
 //                       }}
 //                     >
 //                       {s.value}
@@ -186,10 +173,16 @@
 
 
 
-// src/app/san-pham/[slug]/ProductInfoSection.tsx
+
+
+
+
+
+
+
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 import AddToCartButton from "@/components/AddToCartButton";
@@ -211,6 +204,14 @@ type P = {
   slug?: string;
 };
 
+const API_BASE = (() => {
+  const raw =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "";
+  return String(raw).replace(/\/+$/, "");
+})();
+
 export default function ProductInfoSection({ product }: { product: P }) {
   const p = product;
 
@@ -222,11 +223,62 @@ export default function ProductInfoSection({ product }: { product: P }) {
   const [qty, setQty] = useState<number>(1);
   const [expanded, setExpanded] = useState(false);
 
+  // ✅ Lazy-load mô tả/specs để trang hiển thị nhanh trước
+  const [descRemote, setDescRemote] = useState<string | undefined>(p.description);
+  const [specsRemote, setSpecsRemote] = useState<
+    { label: string; value: string }[] | undefined
+  >(p.specs);
+
+  const [loadingExtra, setLoadingExtra] = useState<boolean>(
+    !p.description && !p.specs
+  );
+
+  useEffect(() => {
+    if (!API_BASE || !p.slug) return;
+
+    // đã có dữ liệu thì thôi
+    if (p.description || (p.specs && p.specs.length > 0)) return;
+
+    let alive = true;
+    setLoadingExtra(true);
+
+    fetch(`${API_BASE}/products/${encodeURIComponent(p.slug)}`, {
+      headers: { Accept: "application/json" },
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((root) => {
+        if (!alive || !root) return;
+
+        const d =
+          typeof root?.description === "string" ? root.description : undefined;
+
+        const specsRaw = Array.isArray(root?.specs) ? root.specs : [];
+        const sp = specsRaw
+          .map((s: any) => ({
+            label: String(s?.label || "").trim(),
+            value: String(s?.value || "").trim(),
+          }))
+          .filter((s: any) => s.label.length > 0);
+
+        setDescRemote(d);
+        setSpecsRemote(sp.length ? sp : undefined);
+      })
+      .finally(() => {
+        if (alive) setLoadingExtra(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [p.slug, p.description, p.specs]);
+
   const desc = useMemo(
     () =>
-      p.description ??
-      "Sản phẩm gỗ thủ công hoàn thiện tỉ mỉ, bền bỉ và tiện dụng cho không gian sống hiện đại.",
-    [p.description]
+      descRemote ??
+      (loadingExtra
+        ? "Đang tải mô tả sản phẩm…"
+        : "Sản phẩm gỗ thủ công hoàn thiện tỉ mỉ, bền bỉ và tiện dụng cho không gian sống hiện đại."),
+    [descRemote, loadingExtra]
   );
 
   const priceStr = useMemo(
@@ -289,7 +341,6 @@ export default function ProductInfoSection({ product }: { product: P }) {
         </a>
       </div>
 
-      {/* MÔ TẢ – hỗ trợ Markdown */}
       <div id="description" className="mt-4">
         <div className="relative text-sm leading-7 text-neutral-700">
           <div
@@ -300,8 +351,12 @@ export default function ProductInfoSection({ product }: { product: P }) {
             <ReactMarkdown
               components={{
                 p: (props) => <p className="whitespace-pre-wrap" {...props} />,
-                ul: (props) => <ul className="ml-5 space-y-1 list-disc" {...props} />,
-                ol: (props) => <ol className="ml-5 space-y-1 list-decimal" {...props} />,
+                ul: (props) => (
+                  <ul className="ml-5 space-y-1 list-disc" {...props} />
+                ),
+                ol: (props) => (
+                  <ol className="ml-5 space-y-1 list-decimal" {...props} />
+                ),
                 li: (props) => <li {...props} />,
               }}
             >
@@ -324,11 +379,10 @@ export default function ProductInfoSection({ product }: { product: P }) {
         </button>
       </div>
 
-      {/* ĐẶC ĐIỂM / THÔNG SỐ – hỗ trợ Markdown ở value */}
       <div id="specifications" className="mt-8">
-        {p.specs && p.specs.length > 0 ? (
+        {specsRemote && specsRemote.length > 0 ? (
           <div className="overflow-hidden border rounded-md">
-            {p.specs.map((s, i) => (
+            {specsRemote.map((s, i) => (
               <div
                 key={i}
                 className="grid grid-cols-2 text-sm border-b last:border-b-0"
@@ -336,21 +390,14 @@ export default function ProductInfoSection({ product }: { product: P }) {
                 <div className="px-4 py-3 bg-neutral-50">{s.label}</div>
                 <div className="px-4 py-3">
                   <div className="space-y-1 text-neutral-800">
-                    <ReactMarkdown
-                      components={{
-                        p: (props) => <p className="whitespace-pre-wrap" {...props} />,
-                        ul: (props) => <ul className="ml-4 list-disc space-y-0.5" {...props} />,
-                        ol: (props) => <ol className="ml-4 list-decimal space-y-0.5" {...props} />,
-                        li: (props) => <li {...props} />,
-                      }}
-                    >
-                      {s.value}
-                    </ReactMarkdown>
+                    <ReactMarkdown>{s.value}</ReactMarkdown>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+        ) : loadingExtra ? (
+          <div className="text-sm text-neutral-600">Đang tải thông số…</div>
         ) : (
           <div className="text-sm text-neutral-600">Thông số sẽ được cập nhật.</div>
         )}
