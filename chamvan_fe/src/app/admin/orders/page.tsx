@@ -1,9 +1,16 @@
 //src/app/admin/orders/page.tsx
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { getJSON, patchJSON } from '@/lib/api';
-import { RefreshCw, Search, Pencil, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import { getJSON, patchJSON } from "@/lib/api";
+import {
+  RefreshCw,
+  Search,
+  Pencil,
+  ChevronDown,
+  ChevronUp,
+  X,
+} from "lucide-react";
 
 type OrderItem = {
   productId: number | string;
@@ -28,21 +35,23 @@ type Order = {
   status?: string;
   createdAt?: string;
   eta?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
 };
 
 const ALL_STATUSES = [
-  'tất cả',
-  'chờ duyệt',
-  'duyệt',
-  'đang chuẩn bị',
-  'đang giao',
-  'hoàn thành',
-  'xóa',
+  "tất cả",
+  "chờ duyệt",
+  "duyệt",
+  "đang chuẩn bị",
+  "đang giao",
+  "hoàn thành",
+  "xóa",
 ];
 
 function VND(n: number | string | null | undefined) {
   const num = Number(n ?? 0) || 0;
-  return num.toLocaleString('vi-VN') + '₫';
+  return num.toLocaleString("vi-VN") + "₫";
 }
 
 function normalizeOrder(raw: any): Order {
@@ -66,18 +75,21 @@ function normalizeOrder(raw: any): Order {
   return {
     id: raw.id,
     userId: raw.userId ?? null,
-    customerName: raw.customerName ?? '',
-    customerEmail: raw.customerEmail ?? '',
-    customerPhone: raw.customerPhone ?? '',
-    shippingAddress: raw.shippingAddress ?? '',
-    notes: raw.notes ?? '',
+    customerName: raw.customerName ?? "",
+    customerEmail: raw.customerEmail ?? "",
+    customerPhone: raw.customerPhone ?? "",
+    shippingAddress: raw.shippingAddress ?? "",
+    notes: raw.notes ?? "",
     items,
     subtotal,
     shippingFee,
     total,
-    status: raw.status ?? 'chờ duyệt',
+    status: raw.status ?? "chờ duyệt",
     createdAt: raw.createdAt,
     eta: raw.eta ?? null,
+
+    ipAddress: raw.ipAddress ?? raw.ip_address ?? null,
+    userAgent: raw.userAgent ?? raw.user_agent ?? null,
   };
 }
 
@@ -86,8 +98,8 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [err, setErr] = useState<string | null>(null);
 
-  const [status, setStatus] = useState<string>('tất cả');
-  const [q, setQ] = useState<string>('');
+  const [status, setStatus] = useState<string>("tất cả");
+  const [q, setQ] = useState<string>("");
 
   const [openId, setOpenId] = useState<number | string | null>(null);
 
@@ -98,7 +110,7 @@ export default function AdminOrdersPage() {
     setLoading(true);
     setErr(null);
     try {
-      const data = await getJSON<any[]>('/admin/orders', true);
+      const data = await getJSON<any[]>("/admin/orders", true);
       const normalized = (data || []).map(normalizeOrder);
       const sorted: Order[] = normalized.sort((a, b) => {
         const at = (a.createdAt ? new Date(a.createdAt).getTime() : 0) || 0;
@@ -107,7 +119,7 @@ export default function AdminOrdersPage() {
       });
       setList(sorted);
     } catch (e: any) {
-      setErr(e?.message || 'Lỗi tải dữ liệu');
+      setErr(e?.message || "Lỗi tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -120,7 +132,8 @@ export default function AdminOrdersPage() {
   const filtered = useMemo(() => {
     const qLower = q.trim().toLowerCase();
     return list.filter((o) => {
-      const okStatus = status === 'tất cả' || (o.status || 'chờ duyệt') === status;
+      const okStatus =
+        status === "tất cả" || (o.status || "chờ duyệt") === status;
       const okSearch =
         !qLower ||
         [o.customerName, o.customerEmail, o.customerPhone, o.shippingAddress]
@@ -145,7 +158,7 @@ export default function AdminOrdersPage() {
       await fetchList();
       setEditing(null);
     } catch (e: any) {
-      alert(e?.message || 'Cập nhật thất bại');
+      alert(e?.message || "Cập nhật thất bại");
     } finally {
       setSaving(false);
     }
@@ -156,8 +169,12 @@ export default function AdminOrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between py-2">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight">Quản lý đơn hàng</h1>
-          <p className="text-sm text-zinc-500">Theo dõi, cập nhật trạng thái & giao hàng</p>
+          <h1 className="text-[22px] font-semibold tracking-tight">
+            Quản lý đơn hàng
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Theo dõi, cập nhật trạng thái & giao hàng
+          </p>
         </div>
         <button
           onClick={fetchList}
@@ -174,7 +191,9 @@ export default function AdminOrdersPage() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex flex-col">
-          <span className="text-[11px] uppercase text-zinc-500">Trạng thái</span>
+          <span className="text-[11px] uppercase text-zinc-500">
+            Trạng thái
+          </span>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -220,13 +239,19 @@ export default function AdminOrdersPage() {
         <div className="px-0 py-3 md:px-4">
           <div className="text-xs text-zinc-500">Đang mở</div>
           <div className="mt-1 text-2xl font-semibold">
-            {filtered.filter((o) => ['chờ duyệt', 'đang chuẩn bị', 'đang giao', 'duyệt'].includes(o.status || '')).length}
+            {
+              filtered.filter((o) =>
+                ["chờ duyệt", "đang chuẩn bị", "đang giao", "duyệt"].includes(
+                  o.status || ""
+                )
+              ).length
+            }
           </div>
         </div>
         <div className="px-0 py-3 md:px-4">
           <div className="text-xs text-zinc-500">Hoàn thành</div>
           <div className="mt-1 text-2xl font-semibold">
-            {filtered.filter((o) => (o.status || '') === 'hoàn thành').length}
+            {filtered.filter((o) => (o.status || "") === "hoàn thành").length}
           </div>
         </div>
       </div>
@@ -285,7 +310,10 @@ export default function AdminOrdersPage() {
           <div className="w-full max-w-xl bg-white">
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200">
               <div className="font-semibold">Cập nhật đơn #{editing.id}</div>
-              <button onClick={() => setEditing(null)} className="grid w-8 h-8 place-items-center hover:bg-zinc-100">
+              <button
+                onClick={() => setEditing(null)}
+                className="grid w-8 h-8 place-items-center hover:bg-zinc-100"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -295,10 +323,12 @@ export default function AdminOrdersPage() {
                 <div className="mb-1 text-sm text-zinc-600">Trạng thái</div>
                 <select
                   className="w-full bg-transparent py-1.5"
-                  value={editing.status || 'chờ duyệt'}
-                  onChange={(e) => setEditing({ ...editing, status: e.target.value })}
+                  value={editing.status || "chờ duyệt"}
+                  onChange={(e) =>
+                    setEditing({ ...editing, status: e.target.value })
+                  }
                 >
-                  {ALL_STATUSES.filter((s) => s !== 'tất cả').map((s) => (
+                  {ALL_STATUSES.filter((s) => s !== "tất cả").map((s) => (
                     <option key={s} value={s} className="capitalize">
                       {s}
                     </option>
@@ -306,15 +336,23 @@ export default function AdminOrdersPage() {
                 </select>
               </div>
               <div>
-                <div className="mb-1 text-sm text-zinc-600">Ngày giao dự kiến (ETA)</div>
+                <div className="mb-1 text-sm text-zinc-600">
+                  Ngày giao dự kiến (ETA)
+                </div>
                 <input
                   type="datetime-local"
                   className="w-full bg-transparent py-1.5"
-                  value={editing.eta ? new Date(editing.eta).toISOString().slice(0, 16) : ''}
+                  value={
+                    editing.eta
+                      ? new Date(editing.eta).toISOString().slice(0, 16)
+                      : ""
+                  }
                   onChange={(e) =>
                     setEditing({
                       ...editing,
-                      eta: e.target.value ? new Date(e.target.value).toISOString() : null,
+                      eta: e.target.value
+                        ? new Date(e.target.value).toISOString()
+                        : null,
                     })
                   }
                 />
@@ -322,7 +360,10 @@ export default function AdminOrdersPage() {
             </div>
 
             <div className="flex justify-end gap-2 px-4 py-3 border-t border-zinc-200">
-              <button className="px-3 py-1.5 hover:bg-zinc-100" onClick={() => setEditing(null)}>
+              <button
+                className="px-3 py-1.5 hover:bg-zinc-100"
+                onClick={() => setEditing(null)}
+              >
                 Hủy
               </button>
               <button
@@ -330,7 +371,7 @@ export default function AdminOrdersPage() {
                 disabled={saving}
                 className="px-3 py-1.5 text-white bg-black disabled:opacity-60"
               >
-                {saving ? 'Đang lưu…' : 'Lưu'}
+                {saving ? "Đang lưu…" : "Lưu"}
               </button>
             </div>
           </div>
@@ -360,25 +401,38 @@ function RowItem({
       <tr className="align-top hover:bg-zinc-50">
         <td className="px-2 py-2">
           <div className="font-medium">
-            {order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : '—'}
+            {order.createdAt
+              ? new Date(order.createdAt).toLocaleString("vi-VN")
+              : "—"}
           </div>
           {order.eta && (
-            <div className="text-xs text-amber-700">ETA: {new Date(order.eta).toLocaleString('vi-VN')}</div>
+            <div className="text-xs text-amber-700">
+              ETA: {new Date(order.eta).toLocaleString("vi-VN")}
+            </div>
           )}
         </td>
         <td className="px-2 py-2">
           <div className="font-medium">{order.customerName}</div>
-          {order.userId != null && <div className="text-xs text-zinc-500">userId: {order.userId}</div>}
+          {order.userId != null && (
+            <div className="text-xs text-zinc-500">userId: {order.userId}</div>
+          )}
         </td>
         <td className="px-2 py-2">
           <div>{order.customerEmail}</div>
-          {order.customerPhone && <div className="text-xs text-zinc-500">{order.customerPhone}</div>}
+          {order.customerPhone && (
+            <div className="text-xs text-zinc-500">{order.customerPhone}</div>
+          )}
         </td>
-        <td className="px-2 py-2 capitalize">{order.status || 'chờ duyệt'}</td>
-        <td className="px-2 py-2 font-semibold text-right">{VND(order.total)}</td>
+        <td className="px-2 py-2 capitalize">{order.status || "chờ duyệt"}</td>
+        <td className="px-2 py-2 font-semibold text-right">
+          {VND(order.total)}
+        </td>
         <td className="px-2 py-2 text-right">
           <div className="flex justify-end gap-2">
-            <button onClick={onToggle} className="inline-flex items-center gap-1 px-2 py-1 hover:bg-zinc-100">
+            <button
+              onClick={onToggle}
+              className="inline-flex items-center gap-1 px-2 py-1 hover:bg-zinc-100"
+            >
               {isOpen ? (
                 <>
                   <ChevronUp className="w-4 h-4" /> Ẩn
@@ -389,7 +443,10 @@ function RowItem({
                 </>
               )}
             </button>
-            <button onClick={onEdit} className="inline-flex items-center gap-1 px-2 py-1 hover:bg-zinc-100">
+            <button
+              onClick={onEdit}
+              className="inline-flex items-center gap-1 px-2 py-1 hover:bg-zinc-100"
+            >
               <Pencil className="w-4 h-4" /> Cập nhật
             </button>
           </div>
@@ -405,11 +462,13 @@ function RowItem({
                 <div className="mb-2 text-sm font-semibold">Giao hàng</div>
                 <div className="space-y-1 text-sm">
                   <div>
-                    <span className="text-zinc-500">Địa chỉ:</span> {order.shippingAddress || '—'}
+                    <span className="text-zinc-500">Địa chỉ:</span>{" "}
+                    {order.shippingAddress || "—"}
                   </div>
                   {order.notes && (
                     <div>
-                      <span className="text-zinc-500">Ghi chú:</span> {order.notes}
+                      <span className="text-zinc-500">Ghi chú:</span>{" "}
+                      {order.notes}
                     </div>
                   )}
                 </div>
@@ -440,7 +499,18 @@ function RowItem({
                     <span className="text-zinc-500">Mã đơn:</span> #{order.id}
                   </div>
                   <div className="capitalize">
-                    <span className="text-zinc-500">Trạng thái:</span> {order.status || 'chờ duyệt'}
+                    <span className="text-zinc-500">Trạng thái:</span>{" "}
+                    {order.status || "chờ duyệt"}
+                  </div>
+                  <div>
+                    <span className="text-zinc-500">IP:</span>{" "}
+                    {order.ipAddress || "—"}
+                  </div>
+                  <div className="break-words">
+                    <span className="text-zinc-500">User-Agent:</span>{" "}
+                    <span title={order.userAgent || ""}>
+                      {order.userAgent || "—"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -454,18 +524,26 @@ function RowItem({
                     <th className="px-2 py-2">Sản phẩm</th>
                     <th className="w-[120px] px-2 py-2 text-right">SL</th>
                     <th className="w-[160px] px-2 py-2 text-right">Đơn giá</th>
-                    <th className="w-[160px] px-2 py-2 text-right">Thành tiền</th>
+                    <th className="w-[160px] px-2 py-2 text-right">
+                      Thành tiền
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200">
                   {order.items.map((it, idx) => (
                     <tr key={idx}>
                       <td className="px-2 py-2">
-                        <div className="font-medium">{it.name || `#${it.productId}`}</div>
+                        <div className="font-medium">
+                          {it.name || `#${it.productId}`}
+                        </div>
                       </td>
                       <td className="px-2 py-2 text-right">{it.qty}</td>
-                      <td className="px-2 py-2 text-right">{VND(it.unitPrice || 0)}</td>
-                      <td className="px-2 py-2 text-right">{VND(it.lineTotal || 0)}</td>
+                      <td className="px-2 py-2 text-right">
+                        {VND(it.unitPrice || 0)}
+                      </td>
+                      <td className="px-2 py-2 text-right">
+                        {VND(it.lineTotal || 0)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

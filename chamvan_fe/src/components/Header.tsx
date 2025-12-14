@@ -49,7 +49,7 @@ export default function Header() {
     "relative pb-2 transition-colors hover:text-[var(--color-primary)] after:absolute after:left-0 after:-bottom-[1px] after:h-[2px] after:w-full after:origin-left after:scale-x-0 after:bg-[var(--color-primary)] after:transition-transform after:duration-300 hover:after:scale-x-100";
 
   const handleCartClick = () => {
-    if (!isLoggedIn) return router.push("/dang-nhap");
+   // if (!isLoggedIn) return router.push("/dang-nhap");
     router.push("/gio-hang");
   };
 
@@ -135,7 +135,7 @@ export default function Header() {
       alt="Logo Chạm Vân"
       width={32}
       height={32}
-      className="h-8 w-8 md:h-9 md:w-9"
+      className="w-8 h-8 md:h-9 md:w-9"
       priority
     />
     <span className="text-[15px] md:text-lg font-semibold tracking-wide">
