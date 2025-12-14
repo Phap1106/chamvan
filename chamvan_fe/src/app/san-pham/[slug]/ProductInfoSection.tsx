@@ -1,4 +1,4 @@
-// // src/app/san-pham/[id]/ProductInfoSection.tsx
+// // src/app/san-pham/[slug]/ProductInfoSection.tsx
 // "use client";
 
 // import { useMemo, useState } from "react";
@@ -25,9 +25,13 @@
 
 // export default function ProductInfoSection({ product }: { product: P }) {
 //   const p = product;
-//   const [colorHex, setColorHex] = useState<string | undefined>(
-//     p.colors?.[0]?.hex || undefined
-//   );
+
+//   // chọn màu đầu tiên có hex hợp lệ (nếu có)
+//   const firstHex =
+//     p.colors?.find((c) => typeof c.hex === "string" && c.hex.trim().length > 0)
+//       ?.hex || undefined;
+
+//   const [colorHex, setColorHex] = useState<string | undefined>(firstHex);
 //   const [qty, setQty] = useState<number>(1);
 //   const [expanded, setExpanded] = useState(false);
 
@@ -37,6 +41,7 @@
 //       "Sản phẩm gỗ thủ công hoàn thiện tỉ mỉ, bền bỉ và tiện dụng cho không gian sống hiện đại.",
 //     [p.description]
 //   );
+
 //   const priceStr = useMemo(
 //     () => p.price.toLocaleString("vi-VN") + " ₫",
 //     [p.price]
@@ -48,6 +53,7 @@
 //     <div className="md:sticky md:top-20">
 //       <h1 className="text-3xl font-semibold tracking-tight">{p.name}</h1>
 //       <div className="mt-2 text-xl font-medium">{priceStr}</div>
+
 //       {p.sku && (
 //         <div className="mt-1 text-sm text-neutral-500">
 //           Mã sản phẩm: {p.sku}
@@ -71,7 +77,7 @@
 //           productId={p.id}
 //           name={p.name}
 //           price={p.price}
-//           image={p.image || "/placeholder.jpg"}
+//           image={p.image || "/placeholder.jpg"} // base64 vẫn OK
 //           qty={qty}
 //           color={colorHex}
 //         />
@@ -101,23 +107,21 @@
 //         <div className="relative text-sm leading-7 text-neutral-700">
 //           <div
 //             className={
-//               expanded
-//                 ? "space-y-2"
-//                 : "space-y-2 max-h-[11rem] overflow-hidden"
+//               expanded ? "space-y-2" : "space-y-2 max-h-[11rem] overflow-hidden"
 //             }
 //           >
 //             <ReactMarkdown
 //               components={{
-//                 p: ({ node, ...props }) => (
+//                 p: ({ ...props }) => (
 //                   <p className="whitespace-pre-wrap" {...props} />
 //                 ),
-//                 ul: ({ node, ...props }) => (
+//                 ul: ({ ...props }) => (
 //                   <ul className="ml-5 space-y-1 list-disc" {...props} />
 //                 ),
-//                 ol: ({ node, ...props }) => (
+//                 ol: ({ ...props }) => (
 //                   <ol className="ml-5 space-y-1 list-decimal" {...props} />
 //                 ),
-//                 li: ({ node, ...props }) => <li {...props} />,
+//                 li: ({ ...props }) => <li {...props} />,
 //               }}
 //             >
 //               {desc}
@@ -139,7 +143,7 @@
 //         </button>
 //       </div>
 
-//       {/* ĐẶC ĐIỂM / THÔNG SỐ – hỗ trợ Markdown ở phần value */}
+//       {/* ĐẶC ĐIỂM / THÔNG SỐ – hỗ trợ Markdown ở value */}
 //       <div id="specifications" className="mt-8">
 //         {p.specs && p.specs.length > 0 ? (
 //           <div className="overflow-hidden border rounded-md">
@@ -149,47 +153,36 @@
 //                 className="grid grid-cols-2 text-sm border-b last:border-b-0"
 //               >
 //                 <div className="px-4 py-3 bg-neutral-50">{s.label}</div>
-//              <div className="px-4 py-3">
-//   <div className="space-y-1 text-neutral-800">
-//     <ReactMarkdown
-//       components={{
-//         p: ({ node, ...props }) => (
-//           <p className="whitespace-pre-wrap" {...props} />
-//         ),
-//         ul: ({ node, ...props }) => (
-//           <ul className="ml-4 list-disc space-y-0.5" {...props} />
-//         ),
-//         ol: ({ node, ...props }) => (
-//           <ol
-//             className="ml-4 list-decimal space-y-0.5"
-//             {...props}
-//           />
-//         ),
-//         li: ({ node, ...props }) => <li {...props} />,
-//       }}
-//     >
-//       {s.value}
-//     </ReactMarkdown>
-//   </div>
-// </div>
-
+//                 <div className="px-4 py-3">
+//                   <div className="space-y-1 text-neutral-800">
+//                     <ReactMarkdown
+//                       components={{
+//                         p: ({ ...props }) => (
+//                           <p className="whitespace-pre-wrap" {...props} />
+//                         ),
+//                         ul: ({ ...props }) => (
+//                           <ul className="ml-4 list-disc space-y-0.5" {...props} />
+//                         ),
+//                         ol: ({ ...props }) => (
+//                           <ol className="ml-4 list-decimal space-y-0.5" {...props} />
+//                         ),
+//                         li: ({ ...props }) => <li {...props} />,
+//                       }}
+//                     >
+//                       {s.value}
+//                     </ReactMarkdown>
+//                   </div>
+//                 </div>
 //               </div>
 //             ))}
 //           </div>
 //         ) : (
-//           <div className="text-sm text-neutral-600">
-//             Thông số sẽ được cập nhật.
-//           </div>
+//           <div className="text-sm text-neutral-600">Thông số sẽ được cập nhật.</div>
 //         )}
 //       </div>
 //     </div>
 //   );
 // }
-
-
-
-
-
 
 
 
@@ -221,7 +214,6 @@ type P = {
 export default function ProductInfoSection({ product }: { product: P }) {
   const p = product;
 
-  // chọn màu đầu tiên có hex hợp lệ (nếu có)
   const firstHex =
     p.colors?.find((c) => typeof c.hex === "string" && c.hex.trim().length > 0)
       ?.hex || undefined;
@@ -272,7 +264,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
           productId={p.id}
           name={p.name}
           price={p.price}
-          image={p.image || "/placeholder.jpg"} // base64 vẫn OK
+          image={p.image || "/placeholder.jpg"}
           qty={qty}
           color={colorHex}
         />
@@ -307,16 +299,10 @@ export default function ProductInfoSection({ product }: { product: P }) {
           >
             <ReactMarkdown
               components={{
-                p: ({ ...props }) => (
-                  <p className="whitespace-pre-wrap" {...props} />
-                ),
-                ul: ({ ...props }) => (
-                  <ul className="ml-5 space-y-1 list-disc" {...props} />
-                ),
-                ol: ({ ...props }) => (
-                  <ol className="ml-5 space-y-1 list-decimal" {...props} />
-                ),
-                li: ({ ...props }) => <li {...props} />,
+                p: (props) => <p className="whitespace-pre-wrap" {...props} />,
+                ul: (props) => <ul className="ml-5 space-y-1 list-disc" {...props} />,
+                ol: (props) => <ol className="ml-5 space-y-1 list-decimal" {...props} />,
+                li: (props) => <li {...props} />,
               }}
             >
               {desc}
@@ -352,16 +338,10 @@ export default function ProductInfoSection({ product }: { product: P }) {
                   <div className="space-y-1 text-neutral-800">
                     <ReactMarkdown
                       components={{
-                        p: ({ ...props }) => (
-                          <p className="whitespace-pre-wrap" {...props} />
-                        ),
-                        ul: ({ ...props }) => (
-                          <ul className="ml-4 list-disc space-y-0.5" {...props} />
-                        ),
-                        ol: ({ ...props }) => (
-                          <ol className="ml-4 list-decimal space-y-0.5" {...props} />
-                        ),
-                        li: ({ ...props }) => <li {...props} />,
+                        p: (props) => <p className="whitespace-pre-wrap" {...props} />,
+                        ul: (props) => <ul className="ml-4 list-disc space-y-0.5" {...props} />,
+                        ol: (props) => <ol className="ml-4 list-decimal space-y-0.5" {...props} />,
+                        li: (props) => <li {...props} />,
                       }}
                     >
                       {s.value}
