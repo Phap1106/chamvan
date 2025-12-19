@@ -14,17 +14,27 @@ const seed_1 = require("./seeds/seed");
 async function bootstrap() {
     const logger = new common_1.Logger('Bootstrap');
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.set('trust proxy', true);
     app.setGlobalPrefix('api');
+    const BODY_LIMIT = process.env.BODY_LIMIT || '50mb';
     app.use((0, cookie_parser_1.default)());
-    app.use((0, express_1.json)({ limit: '10mb' }));
-    app.use((0, express_1.urlencoded)({ extended: true, limit: '10mb' }));
+    app.use((0, express_1.json)({ limit: BODY_LIMIT }));
+    app.use((0, express_1.urlencoded)({ extended: true, limit: BODY_LIMIT }));
+    app.use((err, _req, res, next) => {
+        if (err?.type === 'entity.too.large') {
+            return res.status(413).json({
+                message: 'Payload too large (ảnh/base64 quá nặng). Hãy giảm dung lượng ảnh hoặc giảm số ảnh.',
+            });
+        }
+        return next(err);
+    });
     app.enableCors({
         origin: [
             'http://localhost:3000',
             'http://localhost:3001',
             'https://chamvan.com',
             'https://www.chamvan.com',
-            'https://admin.chamvan.com'
+            'https://admin.chamvan.com',
         ],
         credentials: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -49,7 +59,6 @@ async function bootstrap() {
     const port = Number(process.env.PORT || 4000);
     await app.listen(port, '0.0.0.0');
     logger.log(`✅ API ready on port ${port} (Prefix: /api)`);
-    logger.log(`✅ CORS Enabled for: https://chamvan.com, http://localhost:3000`);
 }
 bootstrap().catch((err) => {
     console.error('Fatal startup error:', err);

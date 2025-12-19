@@ -1,3 +1,5 @@
+
+// // src/main.ts
 // import 'dotenv/config';
 // import { NestFactory } from '@nestjs/core';
 // import { AppModule } from './app.module';
@@ -6,38 +8,45 @@
 // import { json, urlencoded } from 'express';
 // import { DataSource } from 'typeorm';
 // import { seed } from './seeds/seed';
+// import { NestExpressApplication } from '@nestjs/platform-express';
 
 // async function bootstrap() {
 //   const logger = new Logger('Bootstrap');
-//   const app = await NestFactory.create(AppModule);
 
-// //  app.set('trust proxy', true);
+//   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-
-//   // 1. Cấu hình Prefix API
+//   app.set('trust proxy', true);
 //   app.setGlobalPrefix('api');
 
-//   // 2. Middleware xử lý dữ liệu
-//   app.use(cookieParser());
-//   // Tăng giới hạn upload để không bị lỗi khi gửi nhiều link ảnh
-//   app.use(json({ limit: '10mb' }));
-//   app.use(urlencoded({ extended: true, limit: '10mb' }));
+//   const BODY_LIMIT = process.env.BODY_LIMIT || '50mb'; // ✅ tăng limit (base64 rất nặng)
 
-//   // 3. CẤU HÌNH CORS CHUẨN (Fix lỗi Not allowed)
+//   app.use(cookieParser());
+//   app.use(json({ limit: BODY_LIMIT }));
+//   app.use(urlencoded({ extended: true, limit: BODY_LIMIT }));
+
+//   // ✅ trả về 413 rõ ràng khi payload quá lớn (thay vì lỗi mơ hồ)
+//   app.use((err: any, _req: any, res: any, next: any) => {
+//     if (err?.type === 'entity.too.large') {
+//       return res.status(413).json({
+//         message: 'Payload too large (ảnh/base64 quá nặng). Hãy giảm dung lượng ảnh hoặc giảm số ảnh.',
+//       });
+//     }
+//     return next(err);
+//   });
+
 //   app.enableCors({
 //     origin: [
 //       'http://localhost:3000',
 //       'http://localhost:3001',
 //       'https://chamvan.com',
 //       'https://www.chamvan.com',
-//       'https://admin.chamvan.com'
+//       'https://admin.chamvan.com',
 //     ],
-//     credentials: true, // Quan trọng: Cho phép gửi Cookie/Token
+//     credentials: true,
 //     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
 //     allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
 //   });
 
-//   // 4. Validation toàn cục
 //   app.useGlobalPipes(
 //     new ValidationPipe({
 //       whitelist: true,
@@ -46,36 +55,27 @@
 //       forbidUnknownValues: false,
 //     }),
 //   );
-   
 
-//   // 5. Seed Admin (nếu bật)
 //   if (process.env.SEED_ADMIN_ON_BOOT === '1') {
 //     try {
 //       const dataSource = app.get(DataSource);
 //       await seed(dataSource);
 //       logger.log('Admin seeded successfully');
 //     } catch (e) {
-//       logger.error('Seeding failed', e);
+//       logger.error('Seeding failed', e as any);
 //     }
 //   }
 
-//   // 6. Khởi động Server
 //   const port = Number(process.env.PORT || 4000);
 //   await app.listen(port, '0.0.0.0');
-  
 //   logger.log(`✅ API ready on port ${port} (Prefix: /api)`);
-//   logger.log(`✅ CORS Enabled for: https://chamvan.com, http://localhost:3000`);
 // }
 
 // bootstrap().catch((err) => {
+//   // eslint-disable-next-line no-console
 //   console.error('Fatal startup error:', err);
 //   process.exit(1);
 // });
-
-
-
-
-
 
 
 
@@ -89,6 +89,7 @@ import { json, urlencoded } from 'express';
 import { DataSource } from 'typeorm';
 import { seed } from './seeds/seed';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import * as path from 'path';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -98,17 +99,24 @@ async function bootstrap() {
   app.set('trust proxy', true);
   app.setGlobalPrefix('api');
 
-  const BODY_LIMIT = process.env.BODY_LIMIT || '50mb'; // ✅ tăng limit (base64 rất nặng)
+  // ✅ Serve static uploads (quan trọng: đặt trước listen)
+  // URL public sẽ là: https://api.chamvan.com/uploads/...
+  app.useStaticAssets(path.join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
+
+  const BODY_LIMIT = process.env.BODY_LIMIT || '50mb';
 
   app.use(cookieParser());
   app.use(json({ limit: BODY_LIMIT }));
   app.use(urlencoded({ extended: true, limit: BODY_LIMIT }));
 
-  // ✅ trả về 413 rõ ràng khi payload quá lớn (thay vì lỗi mơ hồ)
+  // ✅ trả về 413 rõ ràng khi payload quá lớn
   app.use((err: any, _req: any, res: any, next: any) => {
     if (err?.type === 'entity.too.large') {
       return res.status(413).json({
-        message: 'Payload too large (ảnh/base64 quá nặng). Hãy giảm dung lượng ảnh hoặc giảm số ảnh.',
+        message:
+          'Payload too large (ảnh/base64 quá nặng). Hãy giảm dung lượng ảnh hoặc giảm số ảnh.',
       });
     }
     return next(err);
@@ -149,6 +157,7 @@ async function bootstrap() {
   const port = Number(process.env.PORT || 4000);
   await app.listen(port, '0.0.0.0');
   logger.log(`✅ API ready on port ${port} (Prefix: /api)`);
+  logger.log(`📦 Static uploads served at /uploads/*`);
 }
 
 bootstrap().catch((err) => {

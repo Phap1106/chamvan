@@ -10,8 +10,6 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const typeorm_1 = require("@nestjs/typeorm");
-const throttler_1 = require("@nestjs/throttler");
-const core_1 = require("@nestjs/core");
 const typeorm_config_1 = require("./config/typeorm.config");
 const returns_module_1 = require("./returns/returns.module");
 const users_module_1 = require("./users/users.module");
@@ -21,6 +19,8 @@ const products_module_1 = require("./products/products.module");
 const orders_module_1 = require("./orders/orders.module");
 const telegram_module_1 = require("./integrations/telegram/telegram.module");
 const reports_module_1 = require("./reports/reports.module");
+const throttler_1 = require("@nestjs/throttler");
+const core_1 = require("@nestjs/core");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -29,12 +29,15 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
             typeorm_1.TypeOrmModule.forRoot(typeorm_config_1.ormOpts),
-            throttler_1.ThrottlerModule.forRoot([
-                {
-                    ttl: 60_000,
-                    limit: 60,
-                },
-            ]),
+            throttler_1.ThrottlerModule.forRoot({
+                throttlers: [
+                    {
+                        name: 'default',
+                        ttl: (0, throttler_1.minutes)(1),
+                        limit: 60,
+                    },
+                ],
+            }),
             users_module_1.UsersModule,
             auth_module_1.AuthModule,
             categories_module_1.CategoriesModule,
@@ -45,10 +48,7 @@ exports.AppModule = AppModule = __decorate([
             returns_module_1.ReturnsModule,
         ],
         providers: [
-            {
-                provide: core_1.APP_GUARD,
-                useClass: throttler_1.ThrottlerGuard,
-            },
+            { provide: core_1.APP_GUARD, useClass: throttler_1.ThrottlerGuard },
         ],
     })
 ], AppModule);

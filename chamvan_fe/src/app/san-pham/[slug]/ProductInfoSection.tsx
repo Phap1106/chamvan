@@ -1,4 +1,3 @@
-// // src/app/san-pham/[slug]/ProductInfoSection.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -9,6 +8,7 @@ import QtyStepper from "@/components/QtyStepper";
 import ColorSwatches from "@/components/ColorSwatches";
 import ShareButton from "@/components/ShareButton";
 import WishlistButton from "@/components/WishlistButton";
+import { getApiBase, resolveImageUrl } from "@/lib/apiClient";
 
 type P = {
   id: string;
@@ -23,13 +23,7 @@ type P = {
   slug?: string;
 };
 
-const API_BASE = (() => {
-  const raw =
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "";
-  return String(raw).replace(/\/+$/, "");
-})();
+const API_BASE = getApiBase();
 
 export default function ProductInfoSection({ product }: { product: P }) {
   const p = product;
@@ -42,26 +36,26 @@ export default function ProductInfoSection({ product }: { product: P }) {
   const [qty, setQty] = useState<number>(1);
   const [expanded, setExpanded] = useState(false);
 
-  // ✅ Lazy-load mô tả/specs để trang hiển thị nhanh trước
   const [descRemote, setDescRemote] = useState<string | undefined>(p.description);
   const [specsRemote, setSpecsRemote] = useState<
     { label: string; value: string }[] | undefined
   >(p.specs);
 
-  const [loadingExtra, setLoadingExtra] = useState<boolean>(
-    !p.description && !p.specs
-  );
+  const shouldFetchExtra =
+    Boolean(API_BASE) &&
+    Boolean(p.slug) &&
+    !p.description &&
+    (!p.specs || p.specs.length === 0);
+
+  const [loadingExtra, setLoadingExtra] = useState<boolean>(shouldFetchExtra);
 
   useEffect(() => {
-    if (!API_BASE || !p.slug) return;
-
-    // đã có dữ liệu thì thôi
-    if (p.description || (p.specs && p.specs.length > 0)) return;
+    if (!shouldFetchExtra) return;
 
     let alive = true;
     setLoadingExtra(true);
 
-    fetch(`${API_BASE}/products/${encodeURIComponent(p.slug)}`, {
+    fetch(`${API_BASE}/products/${encodeURIComponent(p.slug!)}`, {
       headers: { Accept: "application/json" },
     })
       .then((r) => (r.ok ? r.json() : null))
@@ -89,7 +83,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
     return () => {
       alive = false;
     };
-  }, [p.slug, p.description, p.specs]);
+  }, [shouldFetchExtra, p.slug]);
 
   const desc = useMemo(
     () =>
@@ -121,11 +115,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
       {!!p.colors?.length && (
         <div className="mt-6">
           <div className="mb-2 text-sm font-medium">MÀU SẮC</div>
-          <ColorSwatches
-            colors={p.colors}
-            value={colorHex}
-            onChange={setColorHex}
-          />
+          <ColorSwatches colors={p.colors} value={colorHex} onChange={setColorHex} />
         </div>
       )}
 
@@ -135,7 +125,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
           productId={p.id}
           name={p.name}
           price={p.price}
-          image={p.image || "/placeholder.jpg"}
+          image={resolveImageUrl(p.image)}
           qty={qty}
           color={colorHex}
         />
@@ -162,20 +152,12 @@ export default function ProductInfoSection({ product }: { product: P }) {
 
       <div id="description" className="mt-4">
         <div className="relative text-sm leading-7 text-neutral-700">
-          <div
-            className={
-              expanded ? "space-y-2" : "space-y-2 max-h-[11rem] overflow-hidden"
-            }
-          >
+          <div className={expanded ? "space-y-2" : "space-y-2 max-h-[11rem] overflow-hidden"}>
             <ReactMarkdown
               components={{
                 p: (props) => <p className="whitespace-pre-wrap" {...props} />,
-                ul: (props) => (
-                  <ul className="ml-5 space-y-1 list-disc" {...props} />
-                ),
-                ol: (props) => (
-                  <ol className="ml-5 space-y-1 list-decimal" {...props} />
-                ),
+                ul: (props) => <ul className="ml-5 space-y-1 list-disc" {...props} />,
+                ol: (props) => <ol className="ml-5 space-y-1 list-decimal" {...props} />,
                 li: (props) => <li {...props} />,
               }}
             >
@@ -202,10 +184,7 @@ export default function ProductInfoSection({ product }: { product: P }) {
         {specsRemote && specsRemote.length > 0 ? (
           <div className="overflow-hidden border rounded-md">
             {specsRemote.map((s, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-2 text-sm border-b last:border-b-0"
-              >
+              <div key={i} className="grid grid-cols-2 text-sm border-b last:border-b-0">
                 <div className="px-4 py-3 bg-neutral-50">{s.label}</div>
                 <div className="px-4 py-3">
                   <div className="space-y-1 text-neutral-800">

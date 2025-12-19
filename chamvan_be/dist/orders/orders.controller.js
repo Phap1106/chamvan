@@ -14,19 +14,19 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrdersAdminController = exports.OrdersPublicController = void 0;
 const common_1 = require("@nestjs/common");
-const throttler_1 = require("@nestjs/throttler");
 const orders_service_1 = require("./orders.service");
 const create_order_dto_1 = require("./dto/create-order.dto");
 const jwt_guard_1 = require("../auth/jwt.guard");
 const optional_jwt_auth_guard_1 = require("../auth/guards/optional-jwt-auth.guard");
+const throttler_1 = require("@nestjs/throttler");
 function getClientIp(req) {
-    const fwd = req.headers['x-forwarded-for'] ?? '';
-    const ipFromFwd = fwd.split(',')[0]?.trim();
-    return (ipFromFwd ||
+    const xff = req.headers['x-forwarded-for'] ?? null;
+    const forwardedFor = xff ? xff : null;
+    const ip = (xff ? xff.split(',')[0].trim() : '') ||
         req.ip ||
         req.socket?.remoteAddress ||
-        req.connection?.remoteAddress ||
-        'unknown');
+        null;
+    return { ip: ip || null, forwardedFor };
 }
 let OrdersPublicController = class OrdersPublicController {
     orders;
@@ -35,11 +35,14 @@ let OrdersPublicController = class OrdersPublicController {
     }
     async create(dto, req) {
         const userId = req?.user?.id ?? null;
-        const ip = getClientIp(req);
+        const { ip, forwardedFor } = getClientIp(req);
         const userAgent = req.headers['user-agent'] ?? null;
-        return this.orders.create(dto, userId, { ip, userAgent });
+        return this.orders.create(dto, userId, { ip, userAgent, forwardedFor });
     }
     async myOrders(req) {
+        if (process.env.AUTH_DEBUG === '1') {
+            console.log('[ORDERS] /orders/my req.user =', req?.user);
+        }
         const userId = req?.user?.id;
         if (!userId)
             throw new common_1.BadRequestException('Invalid user');

@@ -106,12 +106,12 @@ __decorate([
     __metadata("design:type", Array)
 ], Order.prototype, "items", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'ip_address', nullable: true, length: 64 }),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ name: 'ip_address', type: 'varchar', length: 64, nullable: true }),
+    __metadata("design:type", Object)
 ], Order.prototype, "ipAddress", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'user_agent', nullable: true, type: 'text' }),
-    __metadata("design:type", String)
+    (0, typeorm_1.Column)({ name: 'user_agent', type: 'text', nullable: true }),
+    __metadata("design:type", Object)
 ], Order.prototype, "userAgent", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),

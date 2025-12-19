@@ -1,13 +1,13 @@
-// // src/app/san-pham/[slug]/page.tsx
+// src/app/san-pham/[slug]/page.tsx
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import ProductInfoSection from "./ProductInfoSection";
 import ProductGalleryShell from "./ProductGalleryShell";
+import ImgFallback from "@/components/common/ImgFallback";
 
-/** ✅ ISR cho ecommerce: click lần sau gần như instant */
-export const revalidate = 300; // 5 phút
+export const revalidate = 300;
 
 export type UIProduct = {
   id: string;
@@ -15,8 +15,8 @@ export type UIProduct = {
   slug?: string;
   price: number;
   image?: string;
-  images: string[]; // danh sách ảnh "nhẹ" (không base64)
-  hasBase64Images?: boolean; // ✅ chỉ là boolean, không mang base64 qua SSR
+  images: string[];
+  hasBase64Images?: boolean;
   sku?: string;
   colors?: { name: string; hex: string }[];
   category?: string;
@@ -31,9 +31,23 @@ const BASE = (() => {
   return String(raw).replace(/\/+$/, "");
 })();
 
-/** ✅ Chỉ cho SSR các URL nhẹ: http(s) hoặc đường dẫn nội bộ */
+const ORIGIN = (() => {
+  const b = BASE.replace(/\/+$/, "");
+  return b.endsWith("/api") ? b.slice(0, -4) : b;
+})();
+
 const IMG_RE_LITE = /^(https?:\/\/|\/)/i;
 const IMG_RE_FULL = /^(https?:\/\/|data:image\/|\/)/i;
+
+function toAbsUploads(u: any): string | null {
+  if (typeof u !== "string") return null;
+  const s = u.trim();
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s) || /^data:image\//i.test(s)) return s;
+  if (s.startsWith("/uploads/")) return `${ORIGIN}${s}`;
+  if (s.startsWith("uploads/")) return `${ORIGIN}/${s}`;
+  return s; // /placeholder.jpg hoặc path khác
+}
 
 function coerceNumber(n: any): number {
   const num = Number(n);
@@ -42,11 +56,10 @@ function coerceNumber(n: any): number {
 
 function getImagesLite(root: any): string[] {
   const list: string[] = [];
-
   const add = (u: any) => {
-    if (typeof u !== "string") return;
-    const s = u.trim();
-    if (s && IMG_RE_LITE.test(s) && !list.includes(s)) list.push(s);
+    const abs = toAbsUploads(u);
+    if (!abs) return;
+    if (abs && IMG_RE_LITE.test(abs) && !list.includes(abs)) list.push(abs);
   };
 
   add(root?.image);
@@ -59,17 +72,12 @@ function getImagesLite(root: any): string[] {
   }
 
   if (list.length === 0) list.push("/placeholder.jpg");
-
-  // ✅ giới hạn để payload nhẹ
   return list.slice(0, 6);
 }
 
 function hasBase64InRoot(root: any): boolean {
-  const isB64 = (s: any) =>
-    typeof s === "string" && /^data:image\//i.test(s.trim());
-
+  const isB64 = (s: any) => typeof s === "string" && /^data:image\//i.test(s.trim());
   if (isB64(root?.image)) return true;
-
   if (Array.isArray(root?.images)) {
     return root.images.some((it: any) => {
       if (isB64(it)) return true;
@@ -149,12 +157,11 @@ async function SuggestedSection({ productId }: { productId: string }) {
       })
       .slice(0, 4)
       .map((it: any) => {
-        // suggested cũng chỉ lấy ảnh nhẹ
         const imgs: string[] = [];
         const add = (u: any) => {
-          if (typeof u !== "string") return;
-          const s = u.trim();
-          if (s && IMG_RE_LITE.test(s) && !imgs.includes(s)) imgs.push(s);
+          const abs = toAbsUploads(u);
+          if (!abs) return;
+          if (IMG_RE_LITE.test(abs) && !imgs.includes(abs)) imgs.push(abs);
         };
         add(it?.image);
         if (Array.isArray(it?.images)) {
@@ -185,7 +192,7 @@ async function SuggestedSection({ productId }: { productId: string }) {
           {items.map((p) => (
             <Link key={p.id} href={`/san-pham/${p.slug}`} className="block group">
               <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-gray-100 mb-4 border border-gray-100">
-                <img
+                <ImgFallback
                   src={p.image || "/placeholder.jpg"}
                   alt={p.name}
                   className="absolute inset-0 object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
@@ -241,14 +248,13 @@ export default async function ProductDetailPage({
   return (
     <div className="max-w-6xl px-4 py-8 mx-auto md:px-6 md:py-12">
       <div className="grid gap-10 md:grid-cols-2 lg:gap-16">
-        {/* ✅ Gallery: SSR hiện ảnh nhẹ/placeholder trước, base64 load sau */}
         <div>
           <ProductGalleryShell
             slug={product.slug || slug}
             alt={product.name}
             initialImages={product.images}
             shouldLoadBase64={product.hasBase64Images}
-            apiBase={BASE} // server biết BASE, truyền xuống client
+            apiBase={BASE}
             imgReFull={IMG_RE_FULL.source}
           />
         </div>
@@ -258,7 +264,6 @@ export default async function ProductDetailPage({
         </div>
       </div>
 
-      {/* ✅ Suggested không block trang */}
       <Suspense fallback={<SuggestedSkeleton />}>
         <SuggestedSection productId={product.id} />
       </Suspense>
