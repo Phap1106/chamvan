@@ -533,31 +533,44 @@ export class ProductsService {
     return this.saveCoreAndChildren({ ...(dto as any), id }, exist);
   }
 
-  async remove(id: number) {
-    const exist = await this.repo.findOne({ where: { id } });
-    if (!exist) throw new NotFoundException('Không tìm thấy sản phẩm');
-    await this.repo.delete(id);
-  }
 
-  // async getRecommendations(id: number, limit = 12) {
-  //   const current = await this.repo.findOne({
-  //     where: { id },
-  //     relations: ['categories'],
-  //   });
-  //   if (!current) return [];
+async remove(id: number) {
+  // Dùng transaction để tránh trạng thái nửa xóa nửa còn
+  return this.repo.manager.transaction(async (em) => {
+    const productRepo = em.getRepository(Product);
+    const imageRepo = em.getRepository(ProductImage);
+    const colorRepo = em.getRepository(ProductColor);
+    const specRepo = em.getRepository(ProductSpec);
 
-  //   const qb = this.repo
-  //     .createQueryBuilder('p')
-  //     .leftJoinAndSelect('p.images', 'images')
-  //     .leftJoinAndSelect('p.categories', 'categories')
-  //     .where('p.id != :id', { id })
-  //     .andWhere('p.status = :s', { s: 'open' })
-  //     .orderBy('p.created_at', 'DESC')
-  //     .limit(limit);
+    // 1) Lấy product + categories để remove relation an toàn
+    const found = await productRepo.findOne({
+      where: { id },
+      relations: ['categories'],
+    });
 
-  //   return qb.getMany();
-  // }
+    if (!found) throw new NotFoundException('Không tìm thấy sản phẩm');
 
+    // 2) Xóa liên kết many-to-many (join-table)
+    // Cách 2.1: remove relation qua TypeORM (không cần biết tên bảng join)
+    if (found.categories?.length) {
+      await productRepo
+        .createQueryBuilder()
+        .relation(Product, 'categories')
+        .of(id)
+        .remove(found.categories);
+    }
+
+    // 3) Xóa bảng con theo productId (đúng schema bạn đang dùng)
+    await imageRepo.delete({ productId: id } as any);
+    await colorRepo.delete({ productId: id } as any);
+    await specRepo.delete({ productId: id } as any);
+
+    // 4) Xóa product
+    await productRepo.delete(id);
+
+    return { success: true };
+  });
+}
 
 
 async getRecommendations(id: number, limit = 12) {
