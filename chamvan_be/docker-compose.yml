@@ -27,7 +27,7 @@ services:
       PMA_USER: root
       PMA_PASSWORD: root_password
     ports:
-      - "5113:80"
+      - "8000:80"
     depends_on:
       - db
     networks:
