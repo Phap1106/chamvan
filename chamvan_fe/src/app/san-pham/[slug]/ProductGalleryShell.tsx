@@ -18,18 +18,13 @@ function normalizeUploads(u: string, apiOrigin: string) {
   const s = String(u || "").trim();
   if (!s) return "";
   if (/^https?:\/\//i.test(s) || /^data:image\//i.test(s)) return s;
+
+  // ✅ quan trọng: /uploads/... phải map sang API origin để tránh bị request localhost:3000/uploads/*
   if (s.startsWith("/uploads/")) return `${apiOrigin}${s}`;
   if (s.startsWith("uploads/")) return `${apiOrigin}/${s}`;
-  return s;
-}
 
-function loadImage(url: string) {
-  return new Promise<void>((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve();
-    img.onerror = () => reject();
-    img.src = url;
-  });
+  // giữ nguyên các path local như /placeholder.jpg
+  return s;
 }
 
 function dedupe(list: string[]) {
@@ -40,6 +35,22 @@ function dedupe(list: string[]) {
     if (!out.includes(s)) out.push(s);
   }
   return out;
+}
+
+// ✅ check ảnh có load được không (lọc ảnh 404)
+async function canLoad(url: string): Promise<boolean> {
+  if (!url) return false;
+  // không cần check placeholder
+  if (url === FALLBACK) return true;
+
+  return new Promise<boolean>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.decoding = "async";
+    img.loading = "eager";
+    img.src = url;
+  });
 }
 
 export default function ProductGalleryShell({
@@ -64,7 +75,6 @@ export default function ProductGalleryShell({
     return b.endsWith("/api") ? b.slice(0, -4) : b;
   }, [apiBase]);
 
-  // SSR list có thể gồm /uploads/... => normalize sang domain API để tránh 404
   const initialNormalized = useMemo(() => {
     const list = Array.isArray(initialImages) ? initialImages : [];
     const normalized = dedupe(
@@ -77,7 +87,6 @@ export default function ProductGalleryShell({
 
   const [images, setImages] = useState<string[]>(initialNormalized);
 
-  // tránh setState sau unmount
   const aliveRef = useRef(true);
   useEffect(() => {
     aliveRef.current = true;
@@ -86,11 +95,40 @@ export default function ProductGalleryShell({
     };
   }, []);
 
-  // đổi sản phẩm => reset về SSR list ngay
+  // ✅ đổi sản phẩm => reset ngay về SSR list
   useEffect(() => {
     setImages(initialNormalized);
   }, [slug, initialNormalized]);
 
+  // ✅ FIX CHÍNH: lọc bỏ ảnh uploads bị 404 để UI không bị “vỡ”
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      const list = initialNormalized.length ? initialNormalized : [FALLBACK];
+
+      // Nếu list có nhiều ảnh, check tuần tự để lấy ảnh “tồn tại”
+      const ok: string[] = [];
+      for (const u of list) {
+        if (cancelled || !aliveRef.current) return;
+        const ok1 = await canLoad(u);
+        if (ok1) ok.push(u);
+      }
+
+      if (cancelled || !aliveRef.current) return;
+
+      const final = ok.length ? ok : [FALLBACK];
+      setImages(final);
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialNormalized]);
+
+  // (Giữ logic cũ của bạn) chỉ fetch lại khi có base64
   useEffect(() => {
     if (!shouldLoadBase64) return;
     if (!apiBase) return;
@@ -125,28 +163,19 @@ export default function ProductGalleryShell({
         const list = dedupe(listRaw);
         if (!list.length) return;
 
-        // Load tới đâu add tới đó (đảm bảo ảnh add vào là ảnh load được)
+        // append dần và chỉ append ảnh load được
         for (const u of list) {
           if (!aliveRef.current) return;
 
-          // nếu đã có thì skip
-          let exists = false;
-          setImages((prev) => {
-            exists = prev.includes(u);
-            return prev;
-          });
-          if (exists) continue;
+          setImages((prev) => (prev.includes(u) ? prev : prev)); // đọc prev để tránh warning
 
-          try {
-            await loadImage(u);
-          } catch {
-            continue;
-          }
-          if (!aliveRef.current) return;
+          if (images.includes(u)) continue;
+
+          const ok = await canLoad(u);
+          if (!ok || !aliveRef.current) continue;
 
           setImages((prev) => {
             const next = prev.includes(u) ? prev : [...prev, u];
-            // nếu đã có ảnh thật => loại placeholder
             const hasReal = next.some((x) => x !== FALLBACK);
             return hasReal ? next.filter((x) => x !== FALLBACK) : next;
           });
@@ -157,9 +186,9 @@ export default function ProductGalleryShell({
     };
 
     run();
-  }, [slug, apiBase, shouldLoadBase64, IMG_RE, apiOrigin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, apiBase, shouldLoadBase64, apiOrigin, IMG_RE]);
 
-  // đảm bảo không “kẹt” placeholder khi đã có ảnh thật (case SSR đã kèm placeholder)
   const finalImages = useMemo(() => {
     const hasReal = images.some((x) => x !== FALLBACK);
     return hasReal ? images.filter((x) => x !== FALLBACK) : images;

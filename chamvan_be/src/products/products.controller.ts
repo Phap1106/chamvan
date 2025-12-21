@@ -1,49 +1,143 @@
-// // chamvan_be/src/products/products.controller.ts
+// // src/products/products.controller.ts
 // import {
-//   Controller,
-//   Get,
-//   Post,
+//   BadRequestException,
 //   Body,
-//   Patch,
-//   Param,
+//   Controller,
 //   Delete,
-//   Query,
+//   Get,
 //   HttpCode,
+//   Param,
 //   ParseIntPipe,
+//   Patch,
+//   Post,
+//   Query,
+//   UploadedFiles,
+//   UseInterceptors,
 // } from '@nestjs/common';
+// import { FilesInterceptor } from '@nestjs/platform-express';
+// import { diskStorage } from 'multer';
+// import * as fs from 'fs';
+// import * as path from 'path';
+// import sharp from 'sharp';
+
 // import { ProductsService } from './products.service';
-// import { CreateProductDto } from './dto/create-product.dto';
+
+// type UploadedImage = { url: string; thumb: string };
+
+// function ensureDir(p: string) {
+//   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+// }
+// function safeBaseName(original: string) {
+//   const base = path.parse(original).name.replace(/[^a-zA-Z0-9_-]/g, '');
+//   return (base.slice(0, 40) || 'img').toLowerCase();
+// }
+// function yyyymmdd(d = new Date()) {
+//   const y = d.getFullYear();
+//   const m = String(d.getMonth() + 1).padStart(2, '0');
+//   const day = String(d.getDate()).padStart(2, '0');
+//   return `${y}${m}${day}`;
+// }
 
 // @Controller('products')
 // export class ProductsController {
 //   constructor(private readonly productsService: ProductsService) {}
 
+//   /** ✅ upload ảnh */
+//   @Post('upload')
+//   @UseInterceptors(
+//     FilesInterceptor('files', 20, {
+//       storage: diskStorage({
+//         destination: (_req, _file, cb) => {
+//           const dir = path.join(process.cwd(), 'uploads', 'products', yyyymmdd());
+//           ensureDir(dir);
+//           cb(null, dir);
+//         },
+//         filename: (_req, file, cb) => {
+//           const stamp = Date.now();
+//           const rand = Math.random().toString(16).slice(2);
+//           const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+//           cb(null, `${safeBaseName(file.originalname)}-${stamp}-${rand}${ext}`);
+//         },
+//       }),
+//       limits: { fileSize: 8 * 1024 * 1024 },
+//       fileFilter: (_req, file, cb) => {
+//         if (!file.mimetype?.startsWith('image/')) {
+//           return cb(new BadRequestException('File không phải ảnh'), false);
+//         }
+//         cb(null, true);
+//       },
+//     }),
+//   )
+//   async upload(@UploadedFiles() files: Express.Multer.File[]) {
+//     if (!files?.length) throw new BadRequestException('Chưa có file ảnh');
+
+//     const out: UploadedImage[] = [];
+//     for (const f of files) {
+//       const dir = path.dirname(f.path);
+//       const base = path.parse(f.filename).name;
+
+//       const mediumName = `${base}.webp`;
+//       const thumbName = `${base}_thumb.webp`;
+
+//       const mediumAbs = path.join(dir, mediumName);
+//       const thumbAbs = path.join(dir, thumbName);
+
+//       const bg = { r: 245, g: 245, b: 245, alpha: 1 };
+
+//       await sharp(f.path)
+//         .rotate()
+//         .resize({ width: 1400, height: 1400, fit: 'contain', background: bg, withoutEnlargement: true })
+//         .webp({ quality: 82 })
+//         .toFile(mediumAbs);
+
+//       await sharp(f.path)
+//         .rotate()
+//         .resize({ width: 500, height: 500, fit: 'contain', background: bg, withoutEnlargement: true })
+//         .webp({ quality: 72 })
+//         .toFile(thumbAbs);
+
+//       try { fs.unlinkSync(f.path); } catch {}
+
+//       let relDir = dir.replace(process.cwd(), '').replace(/\\/g, '/');
+//       if (!relDir.startsWith('/')) relDir = `/${relDir}`;
+
+//       out.push({
+//         url: `${relDir}/${mediumName}`.replace(/\/{2,}/g, '/'),
+//         thumb: `${relDir}/${thumbName}`.replace(/\/{2,}/g, '/'),
+//       });
+//     }
+
+//     return { files: out };
+//   }
+
+//   @Get(':id/recommendations')
+//   recommendations(@Param('id', ParseIntPipe) id: number, @Query('limit') limit?: string) {
+//     const n = Math.min(24, Math.max(4, Number(limit) || 12));
+//     return this.productsService.getRecommendations(id, n);
+//   }
+
 //   @Post()
-//   create(@Body() createProductDto: CreateProductDto) {
-//     return this.productsService.create(createProductDto);
+//   create(@Body() dto: any) {
+//     // ✅ dto là plain object => không bị whitelist strip
+//     return this.productsService.create(dto);
 //   }
 
 //   @Get()
-//   findAll(@Query() query: any) {
+//   findAll() {
 //     return this.productsService.findAll();
 //   }
 
-//   // Hỗ trợ tìm cả theo ID (số) và Slug (chuỗi)
 //   @Get(':term')
 //   findOne(@Param('term') term: string) {
-//     const isId = !isNaN(Number(term));
-//     if (isId) {
-//       return this.productsService.findOne(+term);
-//     }
+//     const asNumber = Number(term);
+//     const isId = Number.isFinite(asNumber) && String(asNumber) === term;
+//     if (isId) return this.productsService.findOne(asNumber);
 //     return this.productsService.findBySlug(term);
 //   }
 
 //   @Patch(':id')
-//   update(
-//     @Param('id', ParseIntPipe) id: number,
-//     @Body() updateProductDto: CreateProductDto,
-//   ) {
-//     return this.productsService.update(id, updateProductDto);
+//   update(@Param('id', ParseIntPipe) id: number, @Body() dto: any) {
+//     return this.productsService.update(id, dto);
 //   }
 
 //   @Delete(':id')
@@ -51,19 +145,7 @@
 //   async remove(@Param('id', ParseIntPipe) id: number) {
 //     await this.productsService.remove(id);
 //   }
-
-//   // API Gợi ý sản phẩm
-//   @Get(':id/recommendations')
-//   recommendations(
-//     @Param('id', ParseIntPipe) id: number,
-//     @Query('limit') limit?: string,
-//   ) {
-//     const n = Math.min(24, Math.max(4, Number(limit) || 12));
-//     return this.productsService.getRecommendations(id, n);
-//   }
 // }
-
-
 
 
 // src/products/products.controller.ts
@@ -82,8 +164,8 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import * as fs from 'fs';
 import * as path from 'path';
 import sharp from 'sharp';
@@ -96,12 +178,10 @@ type UploadedImage = { url: string; thumb: string };
 function ensureDir(p: string) {
   if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
 }
-
 function safeBaseName(original: string) {
   const base = path.parse(original).name.replace(/[^a-zA-Z0-9_-]/g, '');
   return (base.slice(0, 40) || 'img').toLowerCase();
 }
-
 function yyyymmdd(d = new Date()) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -114,15 +194,9 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   /**
-   * UPLOAD ẢNH TỪ THIẾT BỊ
-   * - multipart/form-data, field: files
-   * - Lưu vào: /uploads/products/YYYYMMDD/
-   * - Convert sang .webp (medium) + _thumb.webp
-   * - Trả về URL dạng: /uploads/products/YYYYMMDD/xxx.webp
-   *
-   * FE workflow đề xuất:
-   * 1) POST /api/products/upload -> nhận {files:[{url,thumb}]}
-   * 2) POST/PATCH product -> lưu url vào image/images
+   * ✅ Upload ảnh: luôn trả về URL /uploads/... (không base64)
+   * ✅ Fix lỗi sharp: "Cannot use same file for input and output"
+   *   (khi upload file .webp => input và output trùng tên)
    */
   @Post('upload')
   @UseInterceptors(
@@ -137,10 +211,12 @@ export class ProductsController {
           const stamp = Date.now();
           const rand = Math.random().toString(16).slice(2);
           const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-          cb(null, `${safeBaseName(file.originalname)}-${stamp}-${rand}${ext}`);
+
+          // ✅ luôn lưu file gốc với suffix _src để tránh trùng output .webp
+          cb(null, `${safeBaseName(file.originalname)}-${stamp}-${rand}_src${ext}`);
         },
       }),
-      limits: { fileSize: 8 * 1024 * 1024 }, // 8MB/ảnh (tuỳ chỉnh)
+      limits: { fileSize: 8 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         if (!file.mimetype?.startsWith('image/')) {
           return cb(new BadRequestException('File không phải ảnh'), false);
@@ -155,39 +231,51 @@ export class ProductsController {
     const out: UploadedImage[] = [];
 
     for (const f of files) {
-      // f.path: .../uploads/products/YYYYMMDD/xxx.jpg
       const dir = path.dirname(f.path);
-      const base = path.parse(f.filename).name;
 
-      const mediumName = `${base}.webp`;
+      // f.filename: xxx_src.jpg/png/webp...
+      const rawBase = path.parse(f.filename).name;
+      const base = rawBase.endsWith('_src') ? rawBase.slice(0, -4) : rawBase;
+
+      // ✅ output KHÁC input tuyệt đối
+      const mediumName = `${base}_m.webp`;
       const thumbName = `${base}_thumb.webp`;
 
       const mediumAbs = path.join(dir, mediumName);
       const thumbAbs = path.join(dir, thumbName);
 
-      // Medium cho trang chi tiết (max 1400px)
+      const bg = { r: 245, g: 245, b: 245, alpha: 1 };
+
       await sharp(f.path)
         .rotate()
-        .resize({ width: 1400, withoutEnlargement: true })
-        .webp({ quality: 80 })
+        .resize({
+          width: 1400,
+          height: 1400,
+          fit: 'contain',
+          background: bg,
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 82 })
         .toFile(mediumAbs);
 
-      // Thumb cho list/related (360px)
       await sharp(f.path)
         .rotate()
-        .resize({ width: 360, withoutEnlargement: true })
-        .webp({ quality: 70 })
+        .resize({
+          width: 500,
+          height: 500,
+          fit: 'contain',
+          background: bg,
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 72 })
         .toFile(thumbAbs);
 
-      // Xoá file gốc (jpg/png) để tiết kiệm dung lượng
+      // xoá file gốc _src.*
       try {
         fs.unlinkSync(f.path);
-      } catch {
-        // ignore
-      }
+      } catch {}
 
-      // Rel path để client gọi được qua static /uploads
-      // dir có dạng: .../<project>/uploads/products/YYYYMMDD
+      // dir tuyệt đối => /uploads/...
       let relDir = dir.replace(process.cwd(), '').replace(/\\/g, '/');
       if (!relDir.startsWith('/')) relDir = `/${relDir}`;
 
@@ -200,23 +288,26 @@ export class ProductsController {
     return { files: out };
   }
 
-  // CREATE
-  @Post()
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  @Get(':id/recommendations')
+  recommendations(@Param('id', ParseIntPipe) id: number, @Query('limit') limit?: string) {
+    const n = Math.min(24, Math.max(4, Number(limit) || 12));
+    return this.productsService.getRecommendations(id, n);
   }
 
-  // LIST (giữ đơn giản; nếu service bạn có filter/pagination thì cứ pass query vào)
+  @Post()
+  create(@Body() dto: CreateProductDto) {
+    return this.productsService.create(dto);
+  }
+
   @Get()
-  findAll(@Query() query: any) {
-    // Nếu service bạn có nhận query: return this.productsService.findAll(query);
-    return this.productsService.findAll();
+  findAll(@Query('q') q?: string, @Query('category') category?: string) {
+    return this.productsService.findAll({ q, category });
   }
 
   /**
-   * GET ONE theo id hoặc slug
-   * - /products/123 -> id
-   * - /products/tuong-tam-the... -> slug
+   * term có thể là:
+   * - id (number)
+   * - slug (string)
    */
   @Get(':term')
   findOne(@Param('term') term: string) {
@@ -226,32 +317,14 @@ export class ProductsController {
     return this.productsService.findBySlug(term);
   }
 
-  // UPDATE
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateProductDto: CreateProductDto,
-  ) {
-    return this.productsService.update(id, updateProductDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: CreateProductDto) {
+    return this.productsService.update(id, dto);
   }
 
-  // DELETE
   @Delete(':id')
   @HttpCode(204)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.productsService.remove(id);
-  }
-
-  /**
-   * RECOMMENDATIONS
-   * /products/:id/recommendations?limit=12
-   */
-  @Get(':id/recommendations')
-  recommendations(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('limit') limit?: string,
-  ) {
-    const n = Math.min(24, Math.max(4, Number(limit) || 12));
-    return this.productsService.getRecommendations(id, n);
   }
 }

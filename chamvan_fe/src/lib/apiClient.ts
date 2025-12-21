@@ -1,70 +1,55 @@
 // src/lib/apiClient.ts
-export function getApiBase() {
+export function getApiBase(): string {
   const raw =
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    "";
-  return String(raw).replace(/\/+$/, ""); // ví dụ: http://localhost:4000/api
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.API_BASE_URL ||
+    "http://localhost:4000/api";
+
+  return String(raw).replace(/\/+$/, "");
 }
 
-export function getApiOrigin() {
-  // Bóc /api ở cuối để build URL ảnh /uploads/...
-  const base = getApiBase();
-  return base.replace(/\/api$/i, "");
+/**
+ * Uploads có thể được serve từ:
+ * - API domain (vd: http://localhost:4000 hoặc https://api.chamvan.com)
+ * - hoặc chính FE origin (vd: http://localhost:3000) nếu bạn đang lưu uploads ở FE
+ *
+ * Ưu tiên:
+ * 1) NEXT_PUBLIC_UPLOADS_ORIGIN (khuyến nghị)
+ * 2) origin tách từ API base (/api -> origin)
+ * 3) rỗng => giữ nguyên "/uploads/..." để browser load theo origin hiện tại
+ */
+export function getUploadsOrigin(): string {
+  const explicit = process.env.NEXT_PUBLIC_UPLOADS_ORIGIN;
+  if (explicit && String(explicit).trim()) return String(explicit).replace(/\/+$/, "");
+
+  const apiBase = getApiBase();
+  const b = apiBase.replace(/\/+$/, "");
+  const origin = b.endsWith("/api") ? b.slice(0, -4) : b;
+  return origin.replace(/\/+$/, "");
 }
 
-export function resolveImageUrl(input?: string) {
-  const s = typeof input === "string" ? input.trim() : "";
+export function resolveImageUrl(input?: string | null): string {
+  const s = String(input ?? "").trim();
   if (!s) return "/placeholder.jpg";
 
-  // full url / data url
-  if (/^(https?:\/\/|data:image\/)/i.test(s)) return s;
+  // absolute / data
+  if (/^https?:\/\//i.test(s) || /^data:image\//i.test(s)) return s;
 
-  // path nội bộ
-  if (s.startsWith("/uploads/") || s.startsWith("/static/") || s.startsWith("/files/")) {
-    return `${getApiOrigin()}${s}`;
+  // normalize "uploads/.." => "/uploads/.."
+  const normalized = s.startsWith("uploads/") ? `/${s}` : s;
+
+  // if "/uploads/.." => allow configurable origin
+  if (normalized.startsWith("/uploads/")) {
+    const upOrigin = getUploadsOrigin();
+    // Nếu upOrigin rỗng => giữ nguyên "/uploads/..." (load theo FE origin hiện tại)
+    return upOrigin ? `${upOrigin}${normalized}` : normalized;
   }
 
-  // các path khác vẫn cho hiển thị (fallback)
-  if (s.startsWith("/")) return s;
+  // other root-relative
+  if (normalized.startsWith("/")) return normalized;
 
-  return s;
-}
-
-export async function apiFetch<T>(
-  path: string,
-  init?: RequestInit & { timeoutMs?: number }
-): Promise<T> {
-  const base = getApiBase();
-  const url = path.startsWith("http") ? path : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
-
-  const timeoutMs =
-    init?.timeoutMs ??
-    Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 15000);
-
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), timeoutMs);
-
-  try {
-    const res = await fetch(url, {
-      ...init,
-      signal: ctrl.signal,
-      headers: {
-        Accept: "application/json",
-        ...(init?.headers || {}),
-      },
-    });
-    if (!res.ok) {
-      // cố gắng đọc message JSON
-      let msg = `${res.status} ${res.statusText}`;
-      try {
-        const j = await res.json();
-        msg = j?.message?.[0] || j?.message || msg;
-      } catch {}
-      throw new Error(msg);
-    }
-    return (await res.json()) as T;
-  } finally {
-    clearTimeout(t);
-  }
+  // fallback: make it root-relative
+  return `/${normalized}`;
 }
