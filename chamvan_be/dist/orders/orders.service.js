@@ -42,36 +42,26 @@ let OrdersService = class OrdersService {
         if (userId) {
             user = await this.userRepo.findOne({ where: { id: String(userId) } });
         }
-        const customerEmail = (user?.email ?? dto?.customerEmail ?? dto?.email ?? '')
+        const customerEmail = (user?.email ??
+            dto?.customerEmail ??
+            dto?.email ??
+            '')
             .toString()
             .trim()
             .toLowerCase();
         const customerName = dto?.customerName ??
             dto?.name ??
-            (user?.fullName ?? '');
+            user?.fullName ??
+            '';
         const customerPhone = dto?.customerPhone ??
             dto?.phone ??
-            (user?.phone ?? null);
-        if (!userId) {
-            const hasEmail = !!customerEmail;
-            const hasPhone = !!customerPhone;
-            if (!customerName || String(customerName).trim().length < 2) {
-                throw new common_1.BadRequestException('Vui lòng nhập họ tên hợp lệ');
-            }
-            if (!hasEmail && !hasPhone) {
-                throw new common_1.BadRequestException('Vui lòng nhập email hoặc số điện thoại');
-            }
-            if (hasEmail) {
-                const okEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail);
-                if (!okEmail)
-                    throw new common_1.BadRequestException('Email không hợp lệ');
-            }
-            if (hasPhone) {
-                const phone = String(customerPhone).replace(/\s+/g, '').trim();
-                const okPhone = /^(0|\+84)[0-9]{9,10}$/.test(phone);
-                if (!okPhone)
-                    throw new common_1.BadRequestException('Số điện thoại không hợp lệ');
-            }
+            user?.phone ??
+            null;
+        if (!String(customerName || '').trim()) {
+            throw new common_1.BadRequestException('Thiếu họ tên');
+        }
+        if (!String(customerEmail || '').trim() && !String(customerPhone || '').trim()) {
+            throw new common_1.BadRequestException('Thiếu email hoặc số điện thoại');
         }
         let numericUserId = null;
         if (typeof userId === 'number') {
@@ -123,12 +113,13 @@ let OrdersService = class OrdersService {
         order.total = subtotal + shippingFee;
         order.status = dto?.status ?? 'chờ duyệt';
         order.eta = dto?.eta ?? null;
-        const saved = (await this.orderRepo.save(order));
+        order.ipAddress = meta?.ip ?? null;
+        order.userAgent = meta?.userAgent ?? null;
+        const saved = await this.orderRepo.save(order);
         for (const it of itemsToCreate) {
             it.order = saved;
             await this.itemRepo.save(it);
         }
-        this.tryNotifySuspicious(saved, meta, dto).catch(() => { });
         try {
             await this.notifyAdminsOrderCreatedSafe({ ...saved, items: itemsToCreate });
         }
@@ -153,14 +144,17 @@ let OrdersService = class OrdersService {
     async findMine(userId) {
         const ors = [];
         const asNum = Number(userId);
-        if (Number.isInteger(asNum))
+        if (Number.isInteger(asNum)) {
             ors.push({ userId: asNum });
+        }
         const user = await this.userRepo.findOne({ where: { id: String(userId) } });
         const email = user?.email ? user.email.trim().toLowerCase() : null;
-        if (email)
+        if (email) {
             ors.push({ customerEmail: email });
-        if (!ors.length)
+        }
+        if (!ors.length) {
             return { items: [], total: 0 };
+        }
         const [items, total] = await this.orderRepo.findAndCount({
             where: ors,
             relations: ['items'],
@@ -242,35 +236,6 @@ let OrdersService = class OrdersService {
             ? await this.enrichOrderForNotify(orderLike.id)
             : orderLike;
         return this.telegram.notifyAdminsOrderSuccess(payload);
-    }
-    async tryNotifySuspicious(savedOrder, meta, dto) {
-        const ip = meta?.ip ?? 'unknown';
-        const ua = meta?.userAgent ?? 'unknown';
-        const email = String(savedOrder?.customerEmail || '').trim().toLowerCase();
-        const phone = String(savedOrder?.customerPhone || '').trim();
-        const isWeird = (!email && !phone) ||
-            String(savedOrder?.customerName || '').trim().length < 2;
-        if (!isWeird)
-            return;
-        const payload = {
-            type: 'SUSPICIOUS_ORDER_PAYLOAD',
-            orderId: savedOrder?.id ?? null,
-            ip,
-            userAgent: ua,
-            email: email || null,
-            phone: phone || null,
-            name: savedOrder?.customerName ?? null,
-            itemsCount: Array.isArray(dto?.items) ? dto.items.length : null,
-            time: new Date().toISOString(),
-        };
-        const t = this.telegram;
-        const fn = t?.notifyAdminsSecurityAlert ||
-            t?.notifyAdminsAbuse ||
-            t?.notifyAdminsText ||
-            t?.notifyAdminsMessage;
-        if (typeof fn === 'function') {
-            await fn.call(this.telegram, payload);
-        }
     }
 };
 exports.OrdersService = OrdersService;

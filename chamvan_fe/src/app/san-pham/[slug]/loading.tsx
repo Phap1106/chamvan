@@ -14,7 +14,7 @@ export default function Loading() {
       </div>
 
       <div className="grid gap-10 md:grid-cols-2 lg:gap-16">
-        <div className="w-full aspect-[4/3] rounded-2xl bg-gray-200/70 animate-pulse" />
+        <div className="w-full aspect-square rounded-2xl bg-gray-200/70 animate-pulse" />
 
         <div className="animate-pulse">
           <div className="w-10/12 mb-4 rounded bg-gray-200/70 h-9" />

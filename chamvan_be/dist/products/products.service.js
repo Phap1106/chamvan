@@ -21,8 +21,10 @@ const product_image_entity_1 = require("./product-image.entity");
 const product_color_entity_1 = require("./product-color.entity");
 const product_spec_entity_1 = require("./product-spec.entity");
 const category_entity_1 = require("../categories/category.entity");
+const IMG_RE = /^(https?:\/\/|data:image\/)/i;
 function slugify(input) {
-    return input
+    return String(input || '')
+        .trim()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/đ/g, 'd')
@@ -31,6 +33,9 @@ function slugify(input) {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
         .replace(/-{2,}/g, '-');
+}
+function cleanImg(v) {
+    return String(v ?? '').trim();
 }
 let ProductsService = class ProductsService {
     repo;
@@ -44,30 +49,6 @@ let ProductsService = class ProductsService {
         this.colorRepo = colorRepo;
         this.specRepo = specRepo;
         this.cateRepo = cateRepo;
-    }
-    normalizeSlug(raw, fallbackName) {
-        const base = (raw && raw.trim()) || (fallbackName && fallbackName.trim()) || '';
-        if (!base)
-            return undefined;
-        const slug = base
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/đ/g, 'd')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '')
-            .replace(/-{2,}/g, '-');
-        return slug || undefined;
-    }
-    pickFirstImage(p) {
-        if (p.image)
-            return p.image;
-        const imgs = p.images ?? [];
-        return imgs[0]?.url;
-    }
-    normPrice(v) {
-        const n = Number(v);
-        return Number.isFinite(n) ? n : 0;
     }
     async findOne(id) {
         const item = await this.repo.findOne({
@@ -101,11 +82,7 @@ let ProductsService = class ProductsService {
         const exists = await this.repo.findOne({ where: { id } });
         if (!exists)
             throw new common_1.NotFoundException('Product not found');
-        const anyDto = dto;
-        const saved = await this.saveCoreAndChildren({
-            ...anyDto,
-            id,
-        });
+        const saved = await this.saveCoreAndChildren({ ...dto, id });
         return this.findOne(saved.id);
     }
     async remove(id) {
@@ -118,24 +95,35 @@ let ProductsService = class ProductsService {
         await this.repo.delete(id);
         return { success: true };
     }
+    pickFirstImage(p) {
+        if (p.image)
+            return p.image;
+        const imgs = p.images ?? [];
+        return imgs[0]?.url;
+    }
+    normPrice(v) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+    }
     async saveCoreAndChildren(input) {
         const anyDto = input;
         const id = input.id ? Number(input.id) : undefined;
         const name = String(input.name ?? '').trim();
-        let slugSource = anyDto.slug ? String(anyDto.slug).trim() : '';
-        if (!slugSource && name)
-            slugSource = name;
+        const slugSource = (anyDto.slug ? String(anyDto.slug).trim() : '') || name;
         const slug = slugSource ? slugify(slugSource) : undefined;
         const rawImages = Array.isArray(anyDto.images) ? anyDto.images : [];
         const uniqueImages = [
             ...new Set(rawImages
-                .map((u) => String(u).trim())
-                .filter((u) => u && u.startsWith('http'))),
+                .map((u) => cleanImg(u))
+                .filter((u) => u && IMG_RE.test(u))),
         ];
-        let image = input.image ? String(input.image).trim() : undefined;
-        if (!image && uniqueImages.length > 0) {
+        let image = input.image ? cleanImg(input.image) : undefined;
+        if (image && !IMG_RE.test(image))
+            image = undefined;
+        if (!image && uniqueImages.length > 0)
             image = uniqueImages[0];
-        }
+        if (image && !uniqueImages.includes(image))
+            uniqueImages.unshift(image);
         const price = String(anyDto.price ?? input.price ?? 0);
         const sku = input.sku ? String(input.sku).trim() : undefined;
         const description = input.description ? String(input.description).trim() : undefined;
@@ -148,8 +136,8 @@ let ProductsService = class ProductsService {
         const categories = categoryIds.length
             ? await this.cateRepo.find({ where: { id: (0, typeorm_2.In)(categoryIds) } })
             : [];
-        const stock = Math.max(0, parseInt(String(anyDto.stock ?? 0)) || 0);
-        const sold = Math.max(0, parseInt(String(anyDto.sold ?? 0)) || 0);
+        const stock = Math.max(0, parseInt(String(anyDto.stock ?? 0), 10) || 0);
+        const sold = Math.max(0, parseInt(String(anyDto.sold ?? 0), 10) || 0);
         const status = String(anyDto.status ?? 'open').toLowerCase() === 'closed' ? 'closed' : 'open';
         const core = this.repo.create({
             ...(id ? { id } : {}),
@@ -175,7 +163,7 @@ let ProductsService = class ProductsService {
             const entities = colors
                 .filter((c) => c && c.name)
                 .map((c) => this.colorRepo.create({
-                name: c.name.trim(),
+                name: String(c.name).trim(),
                 hex: c.hex,
                 productId: saved.id,
             }));
@@ -187,8 +175,8 @@ let ProductsService = class ProductsService {
             const entities = specs
                 .filter((s) => s && s.label && s.value)
                 .map((s) => this.specRepo.create({
-                label: s.label,
-                value: s.value,
+                label: String(s.label).trim(),
+                value: String(s.value).trim(),
                 productId: saved.id,
             }));
             if (entities.length)
@@ -213,10 +201,7 @@ let ProductsService = class ProductsService {
             .where('p.id <> :id', { id: pid })
             .andWhere('p.status = :st', { st: 'open' })
             .andWhere(catIds.length ? 'c.id IN (:...catIds)' : '1=1', { catIds })
-            .andWhere('p.price BETWEEN :min AND :max', {
-            min: price0 * 0.8,
-            max: price0 * 1.25,
-        });
+            .andWhere('p.price BETWEEN :min AND :max', { min: price0 * 0.8, max: price0 * 1.25 });
         const candidates1 = await qb1.getMany();
         let candidates2 = [];
         if (candidates1.length < limit) {
@@ -227,10 +212,7 @@ let ProductsService = class ProductsService {
                 .where('p.id <> :id', { id: pid })
                 .andWhere('p.status = :st', { st: 'open' })
                 .andWhere(catIds.length ? 'c.id IN (:...catIds)' : '1=1', { catIds })
-                .andWhere('p.price BETWEEN :min AND :max', {
-                min: price0 * 0.6,
-                max: price0 * 1.5,
-            });
+                .andWhere('p.price BETWEEN :min AND :max', { min: price0 * 0.6, max: price0 * 1.5 });
             candidates2 = await qb2.getMany();
         }
         let candidates3 = [];
@@ -314,10 +296,7 @@ let ProductsService = class ProductsService {
         };
         const takeTotal = Math.min(Math.max(4, limit), 24);
         const sug50 = Math.ceil(takeTotal * 0.5);
-        const suggested = [
-            ...pick(sameGroup, sug50),
-            ...pick(topSellers, takeTotal - sug50),
-        ].slice(0, takeTotal);
+        const suggested = [...pick(sameGroup, sug50), ...pick(topSellers, takeTotal - sug50)].slice(0, takeTotal);
         return { related, suggested };
     }
 };

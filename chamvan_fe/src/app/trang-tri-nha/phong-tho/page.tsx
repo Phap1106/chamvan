@@ -1,3 +1,4 @@
+// chamvan_fe/src/app/trang-tri-nha/phong-khach/page.tsx
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import ListingTrangTriNha from "../_ListingTTN";

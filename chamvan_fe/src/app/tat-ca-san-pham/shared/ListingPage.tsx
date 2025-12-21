@@ -1,438 +1,412 @@
-// //src/app/tat-ca-san-pham/shared/ListingPage.tsx
-'use client';
 
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useMemo, useState } from 'react';
-import Pagination from '@/components/Pagination';
-import ProductHover, { Product as HoverProduct } from '@/components/ProductHover';
-import { getJSON } from '@/lib/api';
+"use client";
 
-/* ================== CẤU HÌNH ================== */
-const CATEGORIES = [
-  { slug: '', label: 'Tất cả' },
-  { slug: 'hang-moi', label: 'Hàng mới' },
-  { slug: 'qua-tang', label: 'Quà tặng' },
-  { slug: 'trang-tri-nha', label: 'Trang trí nhà' },
-  { slug: 'trung-bay', label: 'Trưng bày' },
-];
+import { useEffect, useMemo, useState } from "react";
+import ProductHover, { Product as UIProduct } from "@/components/ProductHover";
 
-const SORTS = [
-  { key: 'relevance', label: 'Liên quan nhất' },
-  { key: 'newest', label: 'Mới nhất' },
-  { key: 'price-asc', label: 'Giá từ thấp đến cao' },
-  { key: 'price-desc', label: 'Giá từ cao xuống thấp' },
-] as const;
+type SortKey = "relevance" | "price_asc" | "price_desc" | "newest";
 
-type SortKey = (typeof SORTS)[number]['key'];
+const BASE = (() => {
+  const raw =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.API_BASE_URL ||
+    "http://localhost:4000/api";
+  return String(raw).replace(/\/+$/, "");
+})();
 
-function formatCurrency(v: number) {
-  return (Number.isFinite(v) ? v : 0).toLocaleString('vi-VN') + ' ₫';
+const ORIGIN = (() => {
+  const b = BASE.replace(/\/+$/, "");
+  return b.endsWith("/api") ? b.slice(0, -4) : b;
+})();
+
+function toAbsUploads(u: any): string | "" {
+  if (typeof u !== "string") return "";
+  const s = u.trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s) || /^data:image\//i.test(s)) return s;
+  if (s.startsWith("/uploads/")) return `${ORIGIN}${s}`;
+  if (s.startsWith("uploads/")) return `${ORIGIN}/${s}`;
+  return s;
 }
 
-/* ================== HELPER ẢNH ================== */
-const IMG_RE = /^(https?:\/\/|data:image\/|\/)/i;
+function coerceNumber(n: any): number {
+  const v = Number(n);
+  return Number.isFinite(v) ? v : 0;
+}
 
-function getProductImage(p: any): string {
-  if (p?.image && typeof p.image === 'string') {
-    const s = p.image.trim();
-    if (IMG_RE.test(s)) return s;
+function normalizeText(s: string) {
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d")
+    .toLowerCase()
+    .trim();
+}
+
+const priceFmt = new Intl.NumberFormat("vi-VN");
+function priceVND(v: number) {
+  // non-breaking space trước "đ" để hạn chế rơi dòng
+  return `${priceFmt.format(coerceNumber(v))}\u00A0đ`;
+}
+
+const TABS: { key: string; label: string; match?: string[] }[] = [
+  { key: "all", label: "Tất cả" },
+  { key: "hang-moi", label: "Hàng mới", match: ["hang moi", "hang-moi", "new"] },
+  { key: "qua-tang", label: "Quà tặng", match: ["qua tang", "qua-tang", "gift"] },
+  { key: "trang-tri-nha", label: "Trang trí nhà", match: ["trang tri nha", "trang-tri-nha", "decor"] },
+  { key: "trung-bay", label: "Trưng bày", match: ["trung bay", "trung-bay", "display"] },
+];
+
+function pickCategory(root: any): string | undefined {
+  const c =
+    root?.categories?.[0]?.name ||
+    root?.categories?.[0]?.label ||
+    root?.categories?.[0]?.slug ||
+    root?.category ||
+    undefined;
+  return c ? String(c) : undefined;
+}
+
+function pickImage(root: any): string {
+  const main = toAbsUploads(root?.image);
+  if (main) return main;
+
+  if (Array.isArray(root?.images) && root.images.length) {
+    const first = root.images[0];
+    const u = typeof first === "string" ? first : first?.url;
+    const abs = toAbsUploads(u);
+    if (abs) return abs;
   }
 
-  const arr = Array.isArray(p?.images) ? p.images : [];
-  for (const it of arr) {
-    const u =
-      typeof it === 'string'
-        ? it
-        : typeof it === 'object' && it?.url
-          ? it.url
-          : '';
+  return "/placeholder.jpg";
+}
 
-    if (typeof u === 'string') {
-      const s = u.trim();
-      if (IMG_RE.test(s)) return s;
+function mapProduct(root: any): UIProduct | null {
+  if (!root) return null;
+  const id = root?.id ?? root?._id;
+  const name = root?.name;
+  const slug = root?.slug;
+
+  if (id == null || !name) return null;
+
+  return {
+    id: String(id),
+    name: String(name),
+    slug: slug ? String(slug) : undefined,
+    price: coerceNumber(root?.price),
+    original_price: root?.original_price == null ? null : coerceNumber(root?.original_price),
+    image: pickImage(root),
+    colors: Array.isArray(root?.colors)
+      ? root.colors
+          .map((c: any) => ({
+            name: String(c?.name || "").trim(),
+            hex: String(c?.hex || "").trim(),
+          }))
+          .filter((c: any) => c.name && c.hex)
+      : [],
+    category: pickCategory(root),
+  };
+}
+
+async function fetchAllProductsSafe(): Promise<UIProduct[]> {
+  // Thử các endpoint phổ biến, tránh phụ thuộc 1 dạng response
+  const candidates = [
+    `${BASE}/products`,
+    `${BASE}/products?limit=5000`,
+    `${BASE}/products?take=5000`,
+  ];
+
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (!res.ok) continue;
+
+      const json = await res.json();
+
+      // có thể là: [] | {items: []} | {data: []}
+      const arr =
+        Array.isArray(json) ? json :
+        Array.isArray(json?.items) ? json.items :
+        Array.isArray(json?.data) ? json.data :
+        Array.isArray(json?.rows) ? json.rows :
+        [];
+
+      if (!Array.isArray(arr)) continue;
+
+      const mapped = arr.map(mapProduct).filter(Boolean) as UIProduct[];
+      if (mapped.length) return mapped;
+    } catch {
+      // try next
     }
   }
 
-  return '/placeholder.jpg';
+  return [];
 }
 
-/* ================== TYPES ================== */
-type BEColor = { name: string; hex?: string | null };
-type BEProduct = {
-  id: number | string;
-  name: string;
-  slug?: string | null;
-  price: number | string;
-  image?: string | null;
-  images?: any[];
-  colors?: BEColor[];
-};
-
-type ListResp<T> = {
-  items: T[];
-  total: number;
-  page?: number;
-  limit?: number;
-};
-
-type ListingPageProps = {
-  initialCategory?: string; // dùng cho các route /qua-tang, /hang-moi...
-};
-
-/* ================== SORT DROPDOWN ================== */
-function SortMenu({
-  value,
-  onChange,
-}: {
-  value: SortKey;
-  onChange: (k: SortKey) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const current = SORTS.find((s) => s.key === value) ?? SORTS[0];
-
-  return (
-    <div className="relative z-20">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-1 text-sm border px-3 py-1.5 rounded-lg bg-white hover:bg-neutral-50"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        type="button"
-      >
-        <span className="text-neutral-500">Sắp xếp:</span>
-        <span className="font-medium text-neutral-900">{current.label}</span>
-      </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <ul
-            className="absolute right-0 z-30 w-48 p-1 mt-2 duration-100 bg-white border rounded-md shadow-xl animate-in fade-in zoom-in-95"
-            role="listbox"
-          >
-            {SORTS.map((s) => (
-              <li key={s.key}>
-                <button
-                  type="button"
-                  className={`w-full rounded px-3 py-2 text-left text-sm hover:bg-neutral-100 ${
-                    s.key === value
-                      ? 'font-bold text-neutral-900 bg-neutral-50'
-                      : 'text-neutral-700'
-                  }`}
-                  onClick={() => {
-                    onChange(s.key);
-                    setOpen(false);
-                  }}
-                >
-                  {s.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ================== Inner Listing ================== */
-function ListingPageInner({ initialCategory }: ListingPageProps) {
-  const router = useRouter();
-  const sp = useSearchParams();
-
-  const pageParam = Math.max(1, Number(sp.get('page') || '1'));
-  const qParam = sp.get('q') || '';
-  const sortParam = (sp.get('sort') || 'relevance') as SortKey;
-
-  // ✅ Category: ưu tiên initialCategory (từ route /qua-tang), fallback query param
-  const activeCategory = initialCategory ?? sp.get('category') ?? '';
-
-  const [q, setQ] = useState(qParam);
+export default function ListingPage() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
-  const [items, setItems] = useState<HoverProduct[]>([]);
-  const [total, setTotal] = useState(0);
+  const [items, setItems] = useState<UIProduct[]>([]);
 
-  const pageSize = 12;
+  const [tab, setTab] = useState<string>("all");
+  const [q, setQ] = useState("");
+  const [sort, setSort] = useState<SortKey>("relevance");
 
-  useEffect(() => {
-    setQ(qParam);
-  }, [qParam]);
-
-  /**
-   * ✅ BASE PATH:
-   * - Nếu là category route: /qua-tang, /hang-moi...
-   * - Nếu là tất cả: /tat-ca-san-pham
-   */
-  const basePath = initialCategory ? `/${initialCategory}` : '/tat-ca-san-pham';
+  // Pagination
+  const [page, setPage] = useState(1);
+  const perPage = 12; // giảm load ảnh: chỉ render 12 sp / trang
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    params.set('page', String(pageParam));
-    params.set('limit', String(pageSize));
-    if (qParam) params.set('q', qParam);
-    if (activeCategory) params.set('category', activeCategory);
-    if (sortParam) params.set('sort', sortParam);
+    let alive = true;
+    (async () => {
+      setLoading(true);
+      const data = await fetchAllProductsSafe();
+      if (!alive) return;
+      setItems(data);
+      setLoading(false);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
-    const path = `/products?${params.toString()}`;
+  // reset page khi đổi filter/search/sort
+  useEffect(() => {
+    setPage(1);
+  }, [tab, q, sort]);
 
-    setLoading(true);
-    setError('');
+  const filtered = useMemo(() => {
+    const nq = normalizeText(q);
+    const active = TABS.find((t) => t.key === tab);
 
-    getJSON<ListResp<BEProduct> | BEProduct[]>(path)
-      .then((data: any) => {
-        const rawItems = Array.isArray(data) ? data : data.items || data.data || [];
-        const rawTotal = Array.isArray(data)
-          ? data.length
-          : data.total || data.meta?.total || rawItems.length;
+    let list = items;
 
-        const mapped: HoverProduct[] = rawItems.map((p: BEProduct) => ({
-          id: String(p.id),
-          slug: p.slug || String(p.id),
-          name: p.name,
-          price: Number(p.price) || 0,
-          image: getProductImage(p),
-          colors: (p.colors ?? [])
-            .filter((c) => typeof c?.hex === 'string' && (c.hex as string).trim().length > 0)
-            .map((c) => ({ name: c.name, hex: (c.hex as string).trim() })),
-          category: '',
-        }));
+    if (active && active.key !== "all") {
+      const match = (active.match || []).map(normalizeText);
+      list = list.filter((p) => {
+        const cat = normalizeText(p.category || "");
+        const nm = normalizeText(p.name || "");
+        return match.some((m) => cat.includes(m) || nm.includes(m));
+      });
+    }
 
-        setItems(mapped);
-        setTotal(Number(rawTotal) || 0);
-      })
-      .catch((e: any) => {
-        console.error(e);
-        setError('Không thể tải dữ liệu sản phẩm.');
-      })
-      .finally(() => setLoading(false));
-  }, [pageParam, pageSize, qParam, sortParam, activeCategory]);
+    if (nq) {
+      list = list.filter((p) => normalizeText(p.name).includes(nq));
+    }
 
-  function pushParams(next: URLSearchParams) {
-    const qs = next.toString();
-    router.push(qs ? `${basePath}?${qs}` : basePath);
-  }
+    // Sort
+    if (sort === "price_asc") list = [...list].sort((a, b) => coerceNumber(a.price) - coerceNumber(b.price));
+    if (sort === "price_desc") list = [...list].sort((a, b) => coerceNumber(b.price) - coerceNumber(a.price));
+    if (sort === "newest") {
+      // fallback: nếu không có created_at trong UIProduct thì giữ nguyên.
+      // Bạn có thể map thêm created_at từ API nếu cần.
+      list = [...list];
+    }
 
-  function onSearch(e: any) {
-    e.preventDefault();
-    const params = new URLSearchParams(sp.toString());
-    if (q) params.set('q', q);
-    else params.delete('q');
-    params.set('page', '1');
-    pushParams(params);
-  }
+    return list;
+  }, [items, tab, q, sort]);
 
-  function onSortChange(k: SortKey) {
-    const params = new URLSearchParams(sp.toString());
-    params.set('sort', k);
-    params.set('page', '1');
-    pushParams(params);
-  }
+  const totalPages = useMemo(() => {
+    const n = Math.ceil(filtered.length / perPage);
+    return n <= 0 ? 1 : n;
+  }, [filtered.length]);
 
-  const activeLabel =
-    CATEGORIES.find((c) => c.slug === activeCategory)?.label ??
-    (activeCategory ? 'Danh mục' : 'TẤT CẢ SẢN PHẨM');
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * perPage;
+    return filtered.slice(start, start + perPage);
+  }, [filtered, page]);
 
-  // ✅ JSON-LD theo URL mới
-  const jsonLd = useMemo(
-    () => ({
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Trang chủ', item: 'https://chamvan.com/' },
-        ...(activeCategory
-          ? [
-              { '@type': 'ListItem', position: 2, name: activeLabel, item: `https://chamvan.com/${activeCategory}` },
-            ]
-          : [
-              {
-                '@type': 'ListItem',
-                position: 2,
-                name: 'Tất cả sản phẩm',
-                item: 'https://chamvan.com/tat-ca-san-pham',
-              },
-            ]),
-      ],
-    }),
-    [activeCategory, activeLabel],
-  );
+  const goPage = (p: number) => {
+    const next = Math.min(Math.max(1, p), totalPages);
+    setPage(next);
+    // nhẹ nhàng kéo lên đầu grid
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  // Dãy số trang gọn
+  const pageNums = useMemo(() => {
+    const out: number[] = [];
+    const left = Math.max(1, page - 2);
+    const right = Math.min(totalPages, page + 2);
+    for (let i = left; i <= right; i++) out.push(i);
+    return out;
+  }, [page, totalPages]);
 
   return (
-    <div className="min-h-screen px-4 py-8 mx-auto max-w-7xl">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
-      {/* Breadcrumb */}
-      <nav className="mb-4 text-sm text-neutral-500">
-        <Link href="/" className="hover:underline">
-          Trang chủ
-        </Link>
-        <span className="mx-2">/</span>
-
-        {activeCategory ? (
-          <Link href={`/${activeCategory}`} className="hover:underline text-neutral-800">
-            {activeLabel}
-          </Link>
-        ) : (
-          <Link href="/tat-ca-san-pham" className="hover:underline text-neutral-800">
-            Tất cả sản phẩm
-          </Link>
-        )}
-      </nav>
-
-      <div className="mb-10 text-center">
-        <h1 className="mb-2 text-3xl font-bold tracking-tight md:text-4xl">
-          {activeCategory ? activeLabel : 'TẤT CẢ SẢN PHẨM'}
-        </h1>
-        <p className="text-sm text-neutral-500">Tinh hoa gỗ mộc thủ công Việt Nam</p>
+    <div className="mx-auto max-w-[1320px] px-3 sm:px-4 lg:px-5">
+      {/* Header */}
+      <div className="pt-10 pb-6 text-center">
+        <h1 className="text-3xl font-semibold tracking-wide text-center sm:text-4xl">TẤT CẢ SẢN PHẨM</h1>
+        <p className="mt-2 text-sm text-neutral-500">Tinh hoa gỗ mộc thủ công Việt Nam</p>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col items-start justify-between gap-4 mb-8 md:flex-row md:items-center">
-        {/* Categories */}
-        <div className="flex max-w-full gap-2 pb-2 overflow-x-auto md:pb-0 no-scrollbar">
-          {CATEGORIES.map((c) => {
-            const isActive = activeCategory === c.slug;
-
-            // ✅ FIX: category ở root: /qua-tang, /hang-moi...; "Tất cả" vẫn /tat-ca-san-pham
-            const href = c.slug ? `/${c.slug}` : '/tat-ca-san-pham';
-
+      {/* Tabs + Search + Sort */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-2">
+          {TABS.map((t) => {
+            const active = t.key === tab;
             return (
-              <Link
-                key={c.slug}
-                href={href}
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
                 className={[
-                  'rounded-full px-4 py-2 text-sm border transition-all whitespace-nowrap',
-                  isActive
-                    ? 'border-neutral-900 bg-neutral-900 text-white'
-                    : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 hover:text-neutral-900',
-                ].join(' ')}
+                  "px-4 py-2 text-sm",
+                  active ? "bg-neutral-900 text-white" : "bg-transparent text-neutral-700 hover:text-neutral-900",
+                ].join(" ")}
               >
-                {c.label}
-              </Link>
+                {t.label}
+              </button>
             );
           })}
         </div>
 
-        <div className="flex items-center w-full gap-3 md:w-auto">
-          {/* Search */}
-          <form onSubmit={onSearch} className="relative flex-1 md:w-64">
+        <div className="flex items-center gap-3">
+          <div className="relative">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Tìm sản phẩm..."
-              className="w-full py-2 pl-4 pr-10 text-sm transition-all border rounded-lg border-neutral-200 focus:outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
+              className="h-10 w-[260px] max-w-[60vw] bg-white px-3 text-sm outline-none ring-1 ring-neutral-200 focus:ring-neutral-300"
             />
-            <button
-              type="submit"
-              className="absolute -translate-y-1/2 right-3 top-1/2 text-neutral-400 hover:text-neutral-900"
-              aria-label="Tìm kiếm"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
+            <span className="absolute -translate-y-1/2 pointer-events-none right-3 top-1/2 text-neutral-400">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+                <path
+                  d="M16.5 16.5 21 21"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
               </svg>
-            </button>
-          </form>
-
-          {/* Sort */}
-          <SortMenu value={sortParam} onChange={onSortChange} />
-        </div>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="p-4 mb-8 text-center text-red-600 border border-red-100 bg-red-50 rounded-xl">
-          {error}
-        </div>
-      )}
-
-      {/* Loading / Empty / List */}
-      {loading ? (
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-neutral-200 aspect-[3/4] rounded-xl mb-3" />
-              <div className="w-3/4 h-4 mb-2 rounded bg-neutral-200" />
-              <div className="w-1/2 h-4 rounded bg-neutral-200" />
-            </div>
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="py-20 text-center">
-          <p className="mb-4 text-neutral-400">Không tìm thấy sản phẩm nào phù hợp.</p>
-          <button
-            type="button"
-            onClick={() => {
-              setQ('');
-              pushParams(new URLSearchParams());
-            }}
-            className="text-sm font-medium underline text-neutral-900 underline-offset-4"
-          >
-            Xóa bộ lọc
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
-          {items.map((p) => (
-            <ProductHover
-              key={p.id}
-              product={p}
-              href={`/san-pham/${(p as any).slug || p.id}`}
-              priceRenderer={formatCurrency}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      <div className="mt-16">
-        <Pagination
-          total={total}
-          pageSize={pageSize}
-          current={pageParam}
-          makeLink={(page) => {
-            const params = new URLSearchParams(sp.toString());
-            params.set('page', String(page));
-            const qs = params.toString();
-            return qs ? `${basePath}?${qs}` : basePath;
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-export default function ListingPage(props: ListingPageProps) {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex flex-col items-center justify-center w-full min-h-[60vh]">
-          <div className="w-10 h-10 border-2 rounded-full border-neutral-300 border-t-neutral-900 animate-spin" />
-          <div className="mt-4 text-sm text-neutral-600">
-            Đang tải sản phẩm<span className="loadingDots" aria-hidden />
+            </span>
           </div>
 
-          <style jsx>{`
-            .loadingDots::after {
-              content: '';
-              display: inline-block;
-              width: 1.5em;
-              text-align: left;
-              animation: dots 1.2s steps(4, end) infinite;
-            }
-            @keyframes dots {
-              0% { content: ''; }
-              25% { content: '.'; }
-              50% { content: '..'; }
-              75% { content: '...'; }
-              100% { content: ''; }
-            }
-          `}</style>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            className="h-10 px-3 text-sm bg-white outline-none ring-1 ring-neutral-200 focus:ring-neutral-300"
+          >
+            <option value="relevance">Sắp xếp: Liên quan nhất</option>
+            <option value="price_asc">Giá tăng dần</option>
+            <option value="price_desc">Giá giảm dần</option>
+            <option value="newest">Mới nhất</option>
+          </select>
         </div>
-      }
-    >
-      <ListingPageInner {...props} />
-    </Suspense>
+      </div>
+
+      {/* Grid (có line nhẹ để phân cách) */}
+      <div className="mt-8">
+        {loading ? (
+          <div className="grid grid-cols-2 gap-0 border-t border-l sm:grid-cols-3 lg:grid-cols-4 border-neutral-200/70">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="p-4 border-b border-r animate-pulse border-neutral-200/70"
+              >
+                <div className="aspect-square bg-neutral-200" />
+                <div className="w-10/12 h-4 mt-3 bg-neutral-200" />
+                <div className="w-6/12 h-4 mt-2 bg-neutral-200" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-0 border-t border-l sm:grid-cols-3 lg:grid-cols-4 border-neutral-200/70">
+            {pageItems.map((p) => (
+              <div
+                key={p.id}
+                className="p-4 border-b border-r border-neutral-200/70"
+              >
+                <ProductHover
+                  product={p}
+                  href={`/san-pham/${p.slug || p.id}`}
+                  priceRenderer={priceVND}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 py-10">
+          <button
+            type="button"
+            onClick={() => goPage(page - 1)}
+            disabled={page <= 1}
+            className="h-10 px-3 text-sm ring-1 ring-neutral-200 disabled:opacity-40"
+          >
+            Trước
+          </button>
+
+          {page > 3 && (
+            <>
+              <button
+                type="button"
+                onClick={() => goPage(1)}
+                className="w-10 h-10 text-sm ring-1 ring-neutral-200"
+              >
+                1
+              </button>
+              <span className="px-1 text-neutral-400">…</span>
+            </>
+          )}
+
+          {pageNums.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => goPage(n)}
+              className={[
+                "h-10 w-10 text-sm ring-1",
+                n === page ? "bg-neutral-900 text-white ring-neutral-900" : "ring-neutral-200",
+              ].join(" ")}
+            >
+              {n}
+            </button>
+          ))}
+
+          {page < totalPages - 2 && (
+            <>
+              <span className="px-1 text-neutral-400">…</span>
+              <button
+                type="button"
+                onClick={() => goPage(totalPages)}
+                className="w-10 h-10 text-sm ring-1 ring-neutral-200"
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={() => goPage(page + 1)}
+            disabled={page >= totalPages}
+            className="h-10 px-3 text-sm ring-1 ring-neutral-200 disabled:opacity-40"
+          >
+            Sau
+          </button>
+        </div>
+      )}
+
+      {/* Ghi chú nhẹ: chỉ render theo trang để giảm lag */}
+      {!loading && (
+        <div className="pb-10 text-xs text-center text-neutral-400">
+          Đang hiển thị {pageItems.length} / {filtered.length} sản phẩm .
+        </div>
+      )}
+    </div>
   );
 }

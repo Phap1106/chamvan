@@ -24,16 +24,15 @@ __decorate([
     __metadata("design:type", Number)
 ], ProductImage.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'text' }),
+    (0, typeorm_1.Column)({ type: 'longtext' }),
     __metadata("design:type", String)
 ], ProductImage.prototype, "url", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'productId', type: 'int' }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", Number)
 ], ProductImage.prototype, "productId", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => product_entity_1.Product, (p) => p.images, { onDelete: 'CASCADE' }),
-    (0, typeorm_1.JoinColumn)({ name: 'productId' }),
     __metadata("design:type", product_entity_1.Product)
 ], ProductImage.prototype, "product", void 0);
 exports.ProductImage = ProductImage = __decorate([
