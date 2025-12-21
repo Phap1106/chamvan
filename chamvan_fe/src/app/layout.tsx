@@ -36,7 +36,7 @@ export default function RootLayout({
         className="flex flex-col font-sans bg-white min-h-dvh text-neutral-900"
         suppressHydrationWarning={true}
       >
-                {/* <AntiDevtools /> */}
+                <AntiDevtools />
         {/* Toàn bộ phần dùng hook/state đưa vào ClientLayout */}
         <ClientLayout>{children}</ClientLayout>
       </body>
