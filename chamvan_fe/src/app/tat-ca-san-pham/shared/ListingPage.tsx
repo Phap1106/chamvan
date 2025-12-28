@@ -53,10 +53,14 @@ function priceVND(v: number) {
 
 const TABS: { key: string; label: string; match?: string[] }[] = [
   { key: "all", label: "Tất cả" },
-  { key: "hang-moi", label: "Hàng mới", match: ["hang moi", "hang-moi", "new"] },
-  { key: "qua-tang", label: "Quà tặng", match: ["qua tang", "qua-tang", "gift"] },
-  { key: "trang-tri-nha", label: "Trang trí nhà", match: ["trang tri nha", "trang-tri-nha", "decor"] },
-  { key: "trung-bay", label: "Trưng bày", match: ["trung bay", "trung-bay", "display"] },
+  { key: "hang-moi", label: "Hàng mới", match: ["hang moi", "hang-moi", "new", "moi"]  },
+  { key: "qua-tang", label: "Quà tặng", match: ["qua tang", "qua-tang", "gift" , "qua"] },
+  { key: "trang-tri-nha", label: "Trang trí nhà", match: ["trang tri nha", "trang-tri-nha", "trang" ] },
+  // { key: "trung-bay", label: "Trưng bày", match: ["trung bay", "trung-bay", "display"] },
+  { key :"tuong-phat", label: "Tượng Phật", match: ["tuong phat", "tuong-phat", "phat", "buddha" , "tuong"] },
+  {key : "Decor - Trang trí", label: "Decor - Trang trí", match: ["decor", "trang tri", "trang-tri"] },
+  { key : "Tranh - Câu đối", label: "Tranh - Câu đối", match: ["tranh", "cau doi", "cau-doi"] },
+  { key : "Rương - Tráp " , label: "Rương - Tráp ", match: ["truong", "trap", "truong-trap", "ruong-trap" , "ruong"] },
 ];
 
 function pickCategory(root: any): string | undefined {
